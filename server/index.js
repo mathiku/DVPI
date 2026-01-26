@@ -82,61 +82,120 @@ app.get('/api/health', (req, res) => {
 
 // File upload and processing endpoint
 app.post('/api/process', upload.single('file'), async (req, res) => {
+  let filePath = null;
   try {
     console.log('=== File upload received ===');
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('Request file:', req.file ? 'present' : 'missing');
+    
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      console.error('No file in request. Files:', req.files);
+      return res.status(400).json({ error: 'No file uploaded. Please ensure the file field is named "file".' });
     }
 
     console.log(`File uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
-    const filePath = req.file.path;
+    filePath = req.file.path;
     const results = await processCSVFile(filePath);
 
     // Clean up uploaded file
-    fs.unlinkSync(filePath);
+    try {
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log('Cleaned up uploaded file:', filePath);
+      }
+    } catch (cleanupError) {
+      console.warn('Could not delete uploaded file:', cleanupError.message);
+      // Don't fail the request if cleanup fails
+    }
 
     res.json(results);
   } catch (error) {
     console.error('Error processing file:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    
+    // Clean up uploaded file on error
+    if (filePath) {
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupError) {
+        console.warn('Could not delete file on error:', cleanupError.message);
+      }
+    }
+    
+    res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 async function processCSVFile(filePath) {
-  console.log(`processCSVFile: starting to process ${filePath}`);
-  // Parse CSV
-  const data = await parseCSV(filePath);
-  console.log(`processCSVFile: parseCSV returned ${data ? data.length : 0} records`);
-  
-  // Process data and build SOAP requests
-  console.log('processCSVFile: calling processData...');
-  const processedData = processData(data);
-  console.log(`processCSVFile: processData returned ${processedData.groups.length} groups, ${processedData.totalRows} total rows`);
-  
-  // Call DVPI service for each group
-  const results = [];
-  for (const group of processedData.groups) {
-    try {
-      const response = await callDVPI(group.soapInput);
-      results.push({
-        sheet: group.sheet,
-        dvpi: response.dvpi,
-        dk: response.dk,
-        eqr: response.eqr
-      });
-    } catch (error) {
-      console.error(`Error processing group ${group.sheet}:`, error);
-      results.push({
-        sheet: group.sheet,
-        error: error.message
-      });
+  try {
+    console.log(`processCSVFile: starting to process ${filePath}`);
+    
+    // Verify file exists
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
     }
+    
+    const stats = fs.statSync(filePath);
+    console.log(`processCSVFile: file size: ${stats.size} bytes`);
+    
+    // Parse CSV
+    console.log('processCSVFile: calling parseCSV...');
+    const data = await parseCSV(filePath);
+    console.log(`processCSVFile: parseCSV returned ${data ? data.length : 0} records`);
+    
+    if (!data || data.length === 0) {
+      throw new Error('CSV file appears to be empty or could not be parsed');
+    }
+    
+    // Process data and build SOAP requests
+    console.log('processCSVFile: calling processData...');
+    const processedData = processData(data);
+    console.log(`processCSVFile: processData returned ${processedData.groups.length} groups, ${processedData.totalRows} total rows`);
+    
+    if (!processedData.groups || processedData.groups.length === 0) {
+      throw new Error('No data groups found after processing');
+    }
+    
+    // Call DVPI service for each group
+    console.log(`processCSVFile: processing ${processedData.groups.length} groups...`);
+    const results = [];
+    for (let i = 0; i < processedData.groups.length; i++) {
+      const group = processedData.groups[i];
+      try {
+        console.log(`processCSVFile: calling DVPI service for group ${i + 1}/${processedData.groups.length} (sheet: ${group.sheet})`);
+        const response = await callDVPI(group.soapInput);
+        results.push({
+          sheet: group.sheet,
+          dvpi: response.dvpi,
+          dk: response.dk,
+          eqr: response.eqr
+        });
+        console.log(`processCSVFile: successfully processed group ${i + 1}`);
+      } catch (error) {
+        console.error(`Error processing group ${group.sheet}:`, error.message);
+        console.error(`Error stack for group ${group.sheet}:`, error.stack);
+        results.push({
+          sheet: group.sheet,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log(`processCSVFile: completed processing, returning ${results.length} results`);
+    return {
+      results,
+      totalRows: processedData.totalRows
+    };
+  } catch (error) {
+    console.error('processCSVFile: error occurred:', error.message);
+    console.error('processCSVFile: error stack:', error.stack);
+    throw error;
   }
-  
-  return {
-    results,
-    totalRows: processedData.totalRows
-  };
 }
 
 // API routes must come before the catch-all route
