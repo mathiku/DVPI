@@ -139,8 +139,14 @@ routes:
   "https://{default}/":
     type: upstream
     upstream: "dvpi:http"
+  "http://{default}/":
+    type: upstream
+    upstream: "dvpi:http"
   # A basic redirect definition
   # More information: https://docs.upsun.com/routes/examples/redirect/
   "https://www.{default}":
+    type: redirect
+    to: "https://{default}/"
+  "http://www.{default}":
     type: redirect
     to: "https://{default}/"
