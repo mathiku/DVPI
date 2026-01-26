@@ -45,9 +45,28 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+let uploadsDir = path.join(__dirname, '..', 'uploads');
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`Created uploads directory: ${uploadsDir}`);
+  } else {
+    console.log(`Uploads directory exists: ${uploadsDir}`);
+  }
+} catch (error) {
+  console.error(`Warning: Could not create uploads directory at ${uploadsDir}:`, error.message);
+  // Fallback to /tmp if uploads directory can't be created
+  const tmpDir = '/tmp/uploads';
+  try {
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    console.log(`Using temporary directory for uploads: ${tmpDir}`);
+    uploadsDir = tmpDir;
+  } catch (tmpError) {
+    console.error('Failed to create temporary uploads directory:', tmpError.message);
+    throw new Error('Cannot create uploads directory. Please check filesystem permissions.');
+  }
 }
 
 // Configure multer for file uploads

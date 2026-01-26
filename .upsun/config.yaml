@@ -97,6 +97,7 @@ applications:
         npm install
         cd client && npm install && cd ..
         npm run build
+        mkdir -p uploads
         
       # The deploy hook is run after the app container has been started, but before it has started accepting requests.
       # More information: https://docs.upsun.com/app/hooks/compare/compare/deploy/
