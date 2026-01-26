@@ -3,7 +3,7 @@ applications:
   dvpi:
     # Application source code directory
     source:
-      root: "\"
+      root: "/"
 
     # The runtime the application uses.
     # Complete list of available runtimes: https://docs.upsun.com/app/reference/type/
@@ -95,7 +95,8 @@ applications:
       # More information: https://docs.upsun.com/app/hooks/compare/compare/build/
       build: |
         set -eux
-        npm i
+        npm install
+        cd client && npm install && cd ..
         npm run build
         
       # The deploy hook is run after the app container has been started, but before it has started accepting requests.
