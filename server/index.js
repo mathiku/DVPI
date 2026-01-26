@@ -1,5 +1,10 @@
-// Load environment variables from .env file
-require('dotenv').config();
+// Load environment variables from .env file (if it exists)
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv is optional, continue without it
+  console.log('No .env file found, using environment variables');
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -10,6 +15,21 @@ const { parseCSV, processData, callDVPI } = require('./dvpiProcessor');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+console.log('Starting server...');
+console.log('PORT environment variable:', process.env.PORT);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 // Middleware
 app.use(cors());
@@ -113,10 +133,20 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode: serving React app');
-  }
-});
+// Start server with error handling
+try {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✓ Server running on port ${PORT}`);
+    console.log(`✓ Listening on 0.0.0.0:${PORT}`);
+    console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+    if (process.env.NODE_ENV === 'production') {
+      console.log('✓ Production mode: serving React app');
+    }
+  }).on('error', (err) => {
+    console.error('✗ Failed to start server:', err);
+    process.exit(1);
+  });
+} catch (error) {
+  console.error('✗ Error starting server:', error);
+  process.exit(1);
+}
