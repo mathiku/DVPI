@@ -45,7 +45,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Ensure uploads directory exists
-let uploadsDir = path.join(__dirname, '..', 'uploads');
+// Use /tmp for uploads since the filesystem is read-only in Upsun
+let uploadsDir = '/tmp/uploads';
 try {
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
@@ -55,16 +56,16 @@ try {
   }
 } catch (error) {
   console.error(`Warning: Could not create uploads directory at ${uploadsDir}:`, error.message);
-  // Fallback to /tmp if uploads directory can't be created
-  const tmpDir = '/tmp/uploads';
+  // Try alternative location
+  const altDir = '/tmp/dvpi-uploads';
   try {
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
+    if (!fs.existsSync(altDir)) {
+      fs.mkdirSync(altDir, { recursive: true });
     }
-    console.log(`Using temporary directory for uploads: ${tmpDir}`);
-    uploadsDir = tmpDir;
-  } catch (tmpError) {
-    console.error('Failed to create temporary uploads directory:', tmpError.message);
+    console.log(`Using alternative directory for uploads: ${altDir}`);
+    uploadsDir = altDir;
+  } catch (altError) {
+    console.error('Failed to create alternative uploads directory:', altError.message);
     throw new Error('Cannot create uploads directory. Please check filesystem permissions.');
   }
 }
