@@ -1,0 +1,50 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 2rem;
+  color: white;
+  text-align: center;
+}
+
+.App-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+}
+
+.App-header p {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.App-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1rem 0;
+  color: #c33;
+}
+
+.error p {
+  margin: 0;
+}

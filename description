@@ -1,0 +1,8 @@
+A web version that copies the logic from DVPImaster. 
+The front-end will be react and the logic should be node.js.
+It will run as a component on a larger page.
+
+Usage:
+The will navigate to the page and be shown a fileupload compnent where they can either upload or drag-n-drop a csv-file. An example of the file is "DVPIweb\input\Vandplanter -  Vandl_b_20260126_075433.csv"
+
+After loading the file the page/component will then show the results from the endpoint in a simple downloadable grid.
