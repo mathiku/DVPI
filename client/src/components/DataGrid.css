@@ -1,0 +1,171 @@
+.data-grid-container {
+  margin: 2rem 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.data-grid-header {
+  padding: 1rem 1.25rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.data-grid-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #212529;
+}
+
+.data-grid-hint {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+.data-grid-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.data-grid-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.data-grid-button.add-row {
+  background: #e9ecef;
+  color: #495057;
+  border-color: #dee2e6;
+}
+
+.data-grid-button.add-row:hover {
+  background: #dee2e6;
+}
+
+.data-grid-button.recalculate {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #3a7bc8;
+}
+
+.data-grid-button.recalculate:hover:not(:disabled) {
+  background: #3a7bc8;
+}
+
+.data-grid-button.recalculate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.data-grid-error {
+  padding: 0.75rem 1.25rem;
+  background: #fee;
+  color: #c33;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #fcc;
+}
+
+.data-grid-wrapper {
+  overflow-x: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.data-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-grid-table th,
+.data-grid-table td {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #dee2e6;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.data-grid-table th {
+  background: #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-grid-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.data-grid-input,
+.data-grid-select {
+  width: 100%;
+  min-width: 80px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: inherit;
+  font-family: inherit;
+  background: #fff;
+}
+
+.data-grid-select {
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.data-grid-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.data-grid-input:focus,
+.data-grid-select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.data-grid-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  accent-color: #4a90e2;
+}
+
+.data-grid-actions-col {
+  width: 4rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.data-grid-remove {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.data-grid-remove:hover:not(:disabled) {
+  background: #f5c6cb;
+}
+
+.data-grid-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

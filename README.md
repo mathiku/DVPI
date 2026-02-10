@@ -12,7 +12,7 @@ A web-based version of the DVPImaster application for calculating DVPI (Danish V
   - Transektundersøgelse (Transect)
   - Kvadrat nummer (Quadrat number)
   - Arts tom (Empty species flag)
-- Species code mapping from stancode_utf8.csv
+- Species code mapping from stancodesimple.csv
 - SOAP service integration with DVPI calculation service
 - Results display in a downloadable grid format
 
@@ -95,10 +95,11 @@ The CSV can be semicolon, comma, or tab-delimited.
 
 ## Species Code Mapping
 
-The application looks for `stancode_utf8.csv` in the following locations (in order):
-1. `DVPImaster/bin/Debug/net8.0-windows/stancode_utf8.csv`
-2. `DVPIClientApp/dvpi_app/data/stancode_utf8.csv`
-3. `server/stancode_utf8.csv`
+The application looks for `stancodesimple.csv` in the following locations (in order):
+1. `input/stancodesimple.csv`
+2. `DVPImaster/bin/Debug/net8.0-windows/stancodesimple.csv`
+3. `DVPIClientApp/dvpi_app/data/stancodesimple.csv`
+4. `server/stancodesimple.csv`
 
 If not found, species codes will default to "0".
 

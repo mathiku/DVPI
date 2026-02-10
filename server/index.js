@@ -11,7 +11,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { parseCSV, processData, callDVPI } = require('./dvpiProcessor');
+const { parseCSV, processData, callDVPI, getSpeciesData } = require('./dvpiProcessor');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,7 +33,8 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase payload limit for large datasets
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve static files from React app in production
 if (process.env.NODE_ENV === 'production') {
@@ -81,6 +82,54 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Get species data endpoint
+app.get('/api/species', (req, res) => {
+  try {
+    const species = getSpeciesData();
+    res.json({ species });
+  } catch (error) {
+    console.error('Error getting species data:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Recalculate from edited table data (JSON body: { inputRecords })
+app.post('/api/process-data', express.json({ limit: '50mb' }), async (req, res) => {
+  try {
+    const { inputRecords } = req.body || {};
+    if (!Array.isArray(inputRecords) || inputRecords.length === 0) {
+      return res.status(400).json({ error: 'Request body must include inputRecords (array of row objects).' });
+    }
+    const processedData = processData(inputRecords);
+    if (!processedData.groups || processedData.groups.length === 0) {
+      return res.status(400).json({ error: 'No valid data groups after processing. Check column names (e.g. Art latin, Dækningsgrad).' });
+    }
+    const results = [];
+    for (const group of processedData.groups) {
+      try {
+        const response = await callDVPI(group.soapInput);
+        results.push({
+          sheet: group.sheet,
+          dvpi: response.dvpi,
+          dk: response.dk,
+          eqr: response.eqr
+        });
+      } catch (err) {
+        console.error(`Error processing group ${group.sheet}:`, err.message);
+        results.push({ sheet: group.sheet, error: err.message });
+      }
+    }
+    res.json({ 
+      results, 
+      totalRows: processedData.totalRows,
+      foundSpecies: processedData.foundSpecies || []
+    });
+  } catch (error) {
+    console.error('Error in /api/process-data:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // File upload and processing endpoint
 app.post('/api/process', upload.single('file'), async (req, res) => {
   let filePath = null;
@@ -96,7 +145,7 @@ app.post('/api/process', upload.single('file'), async (req, res) => {
 
     console.log(`File uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
     filePath = req.file.path;
-    const results = await processCSVFile(filePath);
+    const { results, totalRows, inputRecords } = await processCSVFile(filePath);
 
     // Clean up uploaded file
     try {
@@ -109,7 +158,7 @@ app.post('/api/process', upload.single('file'), async (req, res) => {
       // Don't fail the request if cleanup fails
     }
 
-    res.json(results);
+    res.json({ results, totalRows, inputRecords });
   } catch (error) {
     console.error('Error processing file:', error);
     console.error('Error stack:', error.stack);
@@ -190,7 +239,9 @@ async function processCSVFile(filePath) {
     console.log(`processCSVFile: completed processing, returning ${results.length} results`);
     return {
       results,
-      totalRows: processedData.totalRows
+      totalRows: processedData.totalRows,
+      inputRecords: data,
+      foundSpecies: processedData.foundSpecies || []
     };
   } catch (error) {
     console.error('processCSVFile: error occurred:', error.message);

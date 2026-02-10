@@ -6,6 +6,8 @@ const path = require('path');
 
 // Load species code mapping
 let latinToCode = new Map();
+let danishToLatin = new Map(); // Map Danish names to Latin names
+let speciesData = []; // Store full species data for frontend
 let speciesCodesLoaded = false;
 
 function loadSpeciesCodes() {
@@ -13,9 +15,10 @@ function loadSpeciesCodes() {
   
   // Try to find stancode file
   const candidates = [
-    path.join(__dirname, '..', '..', 'DVPImaster', 'bin', 'Debug', 'net8.0-windows', 'stancode_utf8.csv'),
-    path.join(__dirname, '..', '..', 'DVPIClientApp', 'dvpi_app', 'data', 'stancode_utf8.csv'),
-    path.join(__dirname, 'stancode_utf8.csv')
+    path.join(__dirname, '..', 'input', 'stancodesimple.csv'),
+    path.join(__dirname, '..', '..', 'DVPImaster', 'bin', 'Debug', 'net8.0-windows', 'stancodesimple.csv'),
+    path.join(__dirname, '..', '..', 'DVPIClientApp', 'dvpi_app', 'data', 'stancodesimple.csv'),
+    path.join(__dirname, 'stancodesimple.csv')
   ];
   
   let found = null;
@@ -27,37 +30,62 @@ function loadSpeciesCodes() {
   }
   
   if (!found) {
-    console.warn('stancode_utf8.csv not found. Species code mapping will be limited.');
+    console.warn('stancodesimple.csv not found. Species code mapping will be limited.');
     speciesCodesLoaded = true;
     return;
   }
   
   try {
-    const content = fs.readFileSync(found, 'utf-8');
+    console.log(`Loading species from: ${found}`);
+    let content = fs.readFileSync(found, 'utf-8');
+    // Remove BOM if present (otherwise first column is "\ufeffDanishName" and record.DanishName is undefined)
+    if (content.charCodeAt(0) === 0xFEFF) {
+      content = content.slice(1);
+      console.log('Removed BOM from stancode file');
+    }
+    console.log(`File size: ${content.length} bytes`);
+    
     const records = parse(content, {
       columns: true,
       skip_empty_lines: true,
-      delimiter: ';'
+      delimiter: ','
     });
     
+    let withDanishCount = 0;
     for (const record of records) {
-      const listId = record.CodeListIdentifier || '';
-      if (listId !== '1064') continue;
-      
-      const scCode = record.ScCode || '';
+      const stancode = record.stancode || '';
       const latinName = record.LatinName || '';
+      // Support both "DanishName" and BOM-prefixed key
+      const danishName = record.DanishName ?? record['\ufeffDanishName'] ?? '';
       
-      if (scCode && latinName) {
-        latinToCode.set(latinName.toLowerCase(), scCode);
+      if (stancode && latinName) {
+        latinToCode.set(latinName.toLowerCase(), stancode);
+        
+        // Map Danish to Latin (if Danish name exists and is not '-')
+        if (danishName && danishName !== '-') {
+          danishToLatin.set(danishName.toLowerCase(), latinName);
+          withDanishCount++;
+        }
+        
+        speciesData.push({
+          latinName: latinName,
+          danishName: danishName,
+          stancode: stancode
+        });
       }
     }
     
-    console.log(`Loaded ${latinToCode.size} species codes from ${found}`);
+    console.log(`Loaded ${latinToCode.size} species codes from ${found} (${withDanishCount} with Danish names)`);
+    console.log(`Loaded ${danishToLatin.size} Danish→Latin mappings`);
     speciesCodesLoaded = true;
   } catch (error) {
     console.error('Error loading species codes:', error);
     speciesCodesLoaded = true;
   }
+}
+
+function getSpeciesData() {
+  return speciesData;
 }
 
 // Initialize on module load
@@ -85,17 +113,55 @@ function splitColumns(line) {
   return result;
 }
 
-function getSpeciesCode(latinName) {
-  if (!latinName) return '0';
+// Normalize species name to Latin (try Danish→Latin mapping if not found as Latin)
+function normalizeToLatin(nameInput) {
+  if (!nameInput) return '';
   
-  // If already numeric, return as-is
-  if (/^\d+$/.test(latinName.trim())) {
-    return latinName.trim();
+  const name = nameInput.trim();
+  if (!name) return '';
+  
+  // If already numeric (stancode), return as-is
+  if (/^\d+$/.test(name)) {
+    return name;
   }
   
-  // Look up in mapping
-  const code = latinToCode.get(latinName.trim().toLowerCase());
-  return code || '0';
+  // Check if it's a valid Latin name
+  if (latinToCode.has(name.toLowerCase())) {
+    return name;
+  }
+  
+  // Try Danish→Latin mapping
+  const latinName = danishToLatin.get(name.toLowerCase());
+  if (latinName) {
+    return latinName;
+  }
+  
+  // Return original if no mapping found (might be a Latin name not in our database)
+  return name;
+}
+
+function getSpeciesCode(nameInput) {
+  if (!nameInput) return '0';
+  
+  const name = nameInput.trim();
+  
+  // If already numeric, return as-is
+  if (/^\d+$/.test(name)) {
+    return name;
+  }
+  
+  // Try Latin name lookup first
+  let code = latinToCode.get(name.toLowerCase());
+  if (code) return code;
+  
+  // Try Danish name lookup - convert to Latin first, then get code
+  const latinName = danishToLatin.get(name.toLowerCase());
+  if (latinName) {
+    code = latinToCode.get(latinName.toLowerCase());
+    if (code) return code;
+  }
+  
+  return '0';
 }
 
 async function parseCSV(filePath) {
@@ -184,8 +250,10 @@ function processData(records) {
     throw new Error('Missing required columns: Art latin or Dækningsgrad');
   }
   
-  // Process rows
+  // Process rows and track unique species found
   const rows = [];
+  const foundSpecies = new Set(); // Track unique species found in upload
+  
   for (const record of records) {
     const values = Object.values(record);
     
@@ -197,21 +265,30 @@ function processData(records) {
       continue;
     }
     
-    const latin = idxLatin < values.length ? (values[idxLatin] || '').trim() : '';
+    const speciesInput = idxLatin < values.length ? (values[idxLatin] || '').trim() : '';
     const cover = idxCover < values.length ? (values[idxCover] || '').trim() : '';
     const tran = idxTran >= 0 && idxTran < values.length ? (values[idxTran] || '').trim() : '';
     const kv = idxKv >= 0 && idxKv < values.length ? (values[idxKv] || '').trim() : '';
     
-    if (!latin && !cover) continue;
+    if (!speciesInput && !cover) continue;
+    
+    // Normalize species name to Latin (handles both Latin and Danish input)
+    const latinName = normalizeToLatin(speciesInput);
+    
+    if (latinName) {
+      foundSpecies.add(latinName.toLowerCase());
+    }
     
     rows.push({
       transect: tran,
       quadrat: kv,
-      species: latin,
-      code: getSpeciesCode(latin),
+      species: latinName,
+      code: getSpeciesCode(latinName),
       coverage: cover
     });
   }
+  
+  console.log(`processData: found ${foundSpecies.size} unique species in upload`);
   
   // Group by sheet (for now, all go to "(pasted)" since CSV doesn't have sheets)
   const groups = [{
@@ -224,7 +301,8 @@ function processData(records) {
       ...g,
       soapInput: buildSoapInput(g.rows)
     })),
-    totalRows: rows.length
+    totalRows: rows.length,
+    foundSpecies: Array.from(foundSpecies)
   };
 }
 
@@ -328,6 +406,14 @@ async function callDVPI(requestXml) {
   
   const endpoint = 'http://service.dvpi.au.dk/1.0.0/DCE_DVPI.svc';
   
+  // Log the request payload
+  console.log('\n=== DVPI Request to Remote Endpoint ===');
+  console.log('Endpoint:', endpoint);
+  console.log('Request XML (inner DVPI_Input):');
+  console.log(requestXml);
+  console.log('Full SOAP Envelope length:', soapEnvelope.length, 'bytes');
+  console.log('=======================================\n');
+  
   try {
     const response = await axios.post(endpoint, soapEnvelope, {
       headers: {
@@ -338,13 +424,22 @@ async function callDVPI(requestXml) {
       timeout: 30000
     });
     
+    // Log the response
+    console.log('\n=== DVPI Response from Remote Endpoint ===');
+    console.log('Status:', response.status);
+    console.log('Response data:');
+    console.log(response.data);
+    console.log('==========================================\n');
+    
     return parseDVPIResponse(response.data);
   } catch (error) {
-    console.error('DVPI service error:', error.message);
+    console.error('\n=== DVPI Service Error ===');
+    console.error('Error message:', error.message);
     if (error.response) {
       console.error('Response status:', error.response.status);
       console.error('Response data:', error.response.data);
     }
+    console.error('==========================\n');
     throw error;
   }
 }
@@ -371,5 +466,6 @@ module.exports = {
   parseCSV,
   processData,
   callDVPI,
-  loadSpeciesCodes
+  loadSpeciesCodes,
+  getSpeciesData
 };
