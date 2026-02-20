@@ -1,6 +1,8 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002';
+
 test.describe('DVPI-app', () => {
   test('viser WSP-logo og dansk titel', async ({ page }) => {
     await page.goto('/');
@@ -24,6 +26,34 @@ test.describe('DVPI-app', () => {
   });
 });
 
+test.describe('API: danske artsnavne (type=dansk)', () => {
+  test('GET /api/species?q=Strøm&type=dansk returnerer arter med danske navne udfyldt', async ({
+    request,
+  }) => {
+    const res = await request.get(`${BASE.replace(/:\d+$/, ':4001')}/api/species?q=Strøm&type=dansk`);
+    expect(res.ok()).toBeTruthy();
+    const data = await res.json();
+    expect(Array.isArray(data)).toBe(true);
+    const strømtråd = data.find((s) => (s.danish || '').includes('Strømtråd'));
+    expect(strømtråd, 'Skal finde art med dansk navn Strømtråd').toBeDefined();
+    expect(strømtråd.latin).toBe('Lemanea fluviatilis');
+    expect(strømtråd.danish).toBe('Strømtråd');
+  });
+
+  test('GET /api/species?q=Carrage&type=dansk returnerer Carrageentang med dansk og latin', async ({
+    request,
+  }) => {
+    const apiBase = BASE.replace(/:\d+$/, ':4001');
+    const res = await request.get(`${apiBase}/api/species?q=Carrage&type=dansk`);
+    expect(res.ok()).toBeTruthy();
+    const data = await res.json();
+    const carrage = data.find((s) => (s.danish || '').includes('Carrageentang'));
+    expect(carrage, 'Skal finde art med dansk navn Carrageentang').toBeDefined();
+    expect(carrage.danish).toBe('Carrageentang');
+    expect(carrage.latin).toBe('Chondrus crispus');
+  });
+});
+
 test.describe('Artsvælger (Videnskabeligt navn / Art)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -43,6 +73,35 @@ test.describe('Artsvælger (Videnskabeligt navn / Art)', () => {
     await expect(latinInput).toHaveValue(/Lemanea/);
     const artInput = page.getByPlaceholder('Art').first();
     await expect(artInput).not.toHaveValue('');
+  });
+
+  test('søgning i Art (dansk) viser danske valgmuligheder og udfylder begge felter korrekt', async ({
+    page,
+  }) => {
+    const artInput = page.getByPlaceholder('Art').first();
+    await artInput.click();
+    await artInput.fill('Strøm');
+    await expect(page.getByRole('listbox')).toBeVisible({ timeout: 10000 });
+    const optionStrømtråd = page.getByRole('option').filter({ hasText: 'Strømtråd' }).first();
+    await expect(optionStrømtråd).toBeVisible();
+    await optionStrømtråd.click();
+    await expect(artInput).toHaveValue('Strømtråd');
+    const latinInput = page.getByPlaceholder('Videnskabeligt navn').first();
+    await expect(latinInput).toHaveValue('Lemanea fluviatilis');
+  });
+
+  test('søgning i Art med Carrage viser Carrageentang og udfylder latin korrekt', async ({
+    page,
+  }) => {
+    const artInput = page.getByPlaceholder('Art').first();
+    await artInput.click();
+    await artInput.fill('Carrage');
+    await expect(page.getByRole('listbox')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('option').filter({ hasText: 'Carrageentang' }).first()).toBeVisible();
+    await page.getByRole('option').filter({ hasText: 'Carrageentang' }).first().click();
+    await expect(artInput).toHaveValue('Carrageentang');
+    const latinInput = page.getByPlaceholder('Videnskabeligt navn').first();
+    await expect(latinInput).toHaveValue('Chondrus crispus');
   });
 
   test('søgning i Art viser dropdown og valg opdaterer begge felter', async ({

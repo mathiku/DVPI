@@ -38,19 +38,22 @@ function loadSpeciesCodes() {
   const delimiter = isSimpleFormat ? ',' : ';';
   
   try {
-    const content = fs.readFileSync(found, 'utf-8');
+    let content = fs.readFileSync(found, 'utf-8');
+    if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
     const records = parse(content, {
       columns: true,
       skip_empty_lines: true,
-      delimiter
+      delimiter,
+      bom: true
     });
     
     for (const record of records) {
       if (isSimpleFormat) {
-        // stancodesimple.csv: kolonner danish, latin, stancode (små bogstaver i header)
-        const code = (record.stancode || '').toString().trim();
-        const latin = (record.latin || record.LatinName || '').trim();
-        let danish = (record.danish || record.DanishName || '').trim();
+        // stancodesimple.csv: kolonner danish, latin, stancode (små bogstaver; fjern BOM fra første kolonnenavn)
+        const raw = record;
+        const code = (raw.stancode || '').toString().trim();
+        const latin = (raw.latin || raw.LatinName || '').trim();
+        let danish = (raw.danish || raw.DanishName || raw['\uFEFFdanish'] || '').trim();
         if (danish === '-') danish = '';
         if (code && latin) {
           latinToCode.set(latin.toLowerCase(), code);
