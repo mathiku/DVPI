@@ -1,32 +1,56 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './App.css';
 import FileUpload from './components/FileUpload';
 import ResultsGrid from './components/ResultsGrid';
+import DataGrid from './components/DataGrid';
 
 function App() {
   const [results, setResults] = useState(null);
+  const [rawRecords, setRawRecords] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [error, setError] = useState(null);
+  const [gridOpen, setGridOpen] = useState(false);
 
   const handleFileProcessed = (data) => {
     setResults(data);
+    setRawRecords(data.rawRecords || null);
+    setGridOpen(true);
     setError(null);
   };
 
   const handleError = (err) => {
     setError(err);
     setResults(null);
+    setRawRecords(null);
   };
 
   const handleLoading = (isLoading) => {
     setLoading(isLoading);
   };
 
+  const handleRecalculate = async (rows) => {
+    if (!rows || rows.length === 0) return;
+    setRecalculating(true);
+    setError(null);
+    try {
+      const response = await axios.post('/api/process-json', { records: rows });
+      setResults(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
+  const showGrid = gridOpen || (rawRecords && rawRecords.length > 0);
+
   return (
     <div className="App">
       <header className="App-header">
         <h1>DVPI Calculator</h1>
-        <p>Upload a CSV file to calculate DVPI, DK, and EQR values</p>
+        <p>Upload a CSV file or enter data in the grid to calculate DVPI, DK, and EQR values</p>
       </header>
       <main className="App-main">
         <FileUpload
@@ -34,6 +58,15 @@ function App() {
           onError={handleError}
           onLoading={handleLoading}
         />
+        {!showGrid && (
+          <button
+            type="button"
+            className="open-grid-button"
+            onClick={() => setGridOpen(true)}
+          >
+            Open grid for manual entry
+          </button>
+        )}
         {loading && (
           <div className="loading">
             <p>Processing file and calculating DVPI values...</p>
@@ -43,6 +76,13 @@ function App() {
           <div className="error">
             <p>Error: {error}</p>
           </div>
+        )}
+        {showGrid && (
+          <DataGrid
+            records={rawRecords || []}
+            onCalculate={handleRecalculate}
+            calculating={recalculating}
+          />
         )}
         {results && !loading && (
           <ResultsGrid results={results.results} totalRows={results.totalRows} />

@@ -6,7 +6,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { parseCSV, processData, callDVPI } = require('./dvpiProcessor');
+const { parseCSV, processData, callDVPI, searchSpecies } = require('./dvpiProcessor');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,6 +39,21 @@ const upload = multer({
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Species search for grid dropdowns (min 3 chars to avoid huge payloads)
+app.get('/api/species', (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (q.length < 3) {
+    return res.json([]);
+  }
+  try {
+    const list = searchSpecies(q);
+    res.json(list);
+  } catch (error) {
+    console.error('Species search error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // File upload and processing endpoint
@@ -96,9 +111,42 @@ async function processCSVFile(filePath) {
   
   return {
     results,
-    totalRows: processedData.totalRows
+    totalRows: processedData.totalRows,
+    rawRecords: data
   };
 }
+
+// Process from JSON (e.g. grid data) for re-calculate
+app.post('/api/process-json', express.json(), async (req, res) => {
+  try {
+    const { records } = req.body || {};
+    if (!Array.isArray(records)) {
+      return res.status(400).json({ error: 'Request body must contain a "records" array' });
+    }
+    const processedData = processData(records);
+    const results = [];
+    for (const group of processedData.groups) {
+      try {
+        const response = await callDVPI(group.soapInput);
+        results.push({
+          sheet: group.sheet,
+          dvpi: response.dvpi,
+          dk: response.dk,
+          eqr: response.eqr
+        });
+      } catch (error) {
+        results.push({ sheet: group.sheet, error: error.message });
+      }
+    }
+    res.json({
+      results,
+      totalRows: processedData.totalRows
+    });
+  } catch (error) {
+    console.error('Error processing JSON:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // API routes must come before the catch-all route
 // (already defined above)

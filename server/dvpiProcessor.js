@@ -6,6 +6,7 @@ const path = require('path');
 
 // Load species code mapping
 let latinToCode = new Map();
+let speciesList = []; // { latin, danish, code } for API
 let speciesCodesLoaded = false;
 
 function loadSpeciesCodes() {
@@ -46,9 +47,11 @@ function loadSpeciesCodes() {
       
       const scCode = record.ScCode || '';
       const latinName = record.LatinName || '';
+      const danishName = (record.DanishName || record.Art || record.Navn || record.VernacularName || '').trim() || latinName;
       
       if (scCode && latinName) {
         latinToCode.set(latinName.toLowerCase(), scCode);
+        speciesList.push({ latin: latinName, danish: danishName, code: scCode });
       }
     }
     
@@ -58,6 +61,18 @@ function loadSpeciesCodes() {
     console.error('Error loading species codes:', error);
     speciesCodesLoaded = true;
   }
+}
+
+/** Returns species matching query (min 3 chars). Search on both latin and danish. */
+function searchSpecies(q) {
+  loadSpeciesCodes();
+  const term = (q || '').trim().toLowerCase();
+  if (term.length < 3) return [];
+  return speciesList.filter(
+    s =>
+      s.latin.toLowerCase().includes(term) ||
+      s.danish.toLowerCase().includes(term)
+  ).slice(0, 100);
 }
 
 // Initialize on module load
@@ -371,5 +386,6 @@ module.exports = {
   parseCSV,
   processData,
   callDVPI,
-  loadSpeciesCodes
+  loadSpeciesCodes,
+  searchSpecies
 };

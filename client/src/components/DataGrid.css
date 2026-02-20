@@ -1,0 +1,142 @@
+.data-grid-container {
+  margin-top: 1.5rem;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.data-grid-header {
+  margin-bottom: 1rem;
+}
+
+.data-grid-header h2 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.data-grid-hint {
+  color: #666;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.data-grid-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-add-row,
+.btn-calculate {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-add-row {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.btn-add-row:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-calculate {
+  background-color: #2d7d4a;
+  color: white;
+}
+
+.btn-calculate:hover:not(:disabled) {
+  background-color: #236b3d;
+}
+
+.btn-calculate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.data-grid-wrapper {
+  overflow-x: auto;
+}
+
+.data-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.data-grid-table thead {
+  background-color: #f8f9fa;
+}
+
+.data-grid-table th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.data-grid-table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.data-grid-table input {
+  width: 100%;
+  min-width: 80px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.data-grid-table input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.data-grid-table input:disabled {
+  background-color: #eee;
+  cursor: not-allowed;
+}
+
+.data-grid-select {
+  width: 100%;
+  min-width: 80px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.data-grid-table .col-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.btn-remove-row {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  color: #c33;
+  background: none;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-remove-row:hover:not(:disabled) {
+  background-color: #fee;
+}
+
+.btn-remove-row:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
