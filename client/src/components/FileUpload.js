@@ -10,7 +10,7 @@ function FileUpload({ onFileProcessed, onError, onLoading }) {
     if (!file) return;
     
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      onError('Please upload a CSV file');
+      onError('Upload venligst en CSV-fil');
       return;
     }
 
@@ -26,7 +26,7 @@ function FileUpload({ onFileProcessed, onError, onLoading }) {
       });
       onFileProcessed(response.data);
     } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message || 'An error occurred';
+      const errorMessage = error.response?.data?.error || error.message || 'Der opstod en fejl';
       onError(errorMessage);
     } finally {
       onLoading(false);
@@ -105,9 +105,9 @@ function FileUpload({ onFileProcessed, onError, onLoading }) {
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
           <p className="upload-text">
-            {isDragging ? 'Drop your CSV file here' : 'Drag and drop a CSV file here, or click to select'}
+            {isDragging ? 'Slip din CSV-fil her' : 'Træk og slip en CSV-fil her, eller klik for at vælge'}
           </p>
-          <p className="upload-hint">CSV files only</p>
+          <p className="upload-hint">Kun CSV-filer</p>
         </div>
       </div>
     </div>

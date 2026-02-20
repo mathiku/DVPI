@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import './SpeciesSelect.css';
 
@@ -9,27 +10,40 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
   const [query, setQuery] = useState(value || '');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [dropdownRect, setDropdownRect] = useState(null);
   const debounceRef = useRef(null);
   const listRef = useRef(null);
+  const wrapRef = useRef(null);
 
   const isLatin = type === 'latin';
-  const displayValue = value || query;
+  // Når dropdown er åben vises query, så backspace/slet virker; ellers vis valgt værdi
+  const displayValue = open ? query : (value || query);
 
   const fetchOptions = useCallback(async (q) => {
     const term = (q || '').trim();
     if (term.length < MIN_SEARCH_LENGTH) {
       setOptions([]);
+      setFetchError(null);
       return;
     }
     setLoading(true);
+    setFetchError(null);
     try {
-      const { data } = await axios.get('/api/species', { params: { q: term } });
+      const { data } = await axios.get('/api/species', {
+        params: { q: term, type: isLatin ? 'latin' : 'dansk' },
+      });
       setOptions(Array.isArray(data) ? data : []);
       setHighlightIndex(-1);
     } catch (err) {
       setOptions([]);
+      const msg = err.response?.status === 500
+        ? (err.response?.data?.error || err.message)
+        : 'Kunne ikke hente arter. Er serveren startet på port 4001?';
+      setFetchError(msg);
+      console.error('Species search failed:', err.message, err.response?.data);
     } finally {
       setLoading(false);
     }
@@ -49,6 +63,7 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
 
   useEffect(() => {
     setQuery(value || '');
+    setFetchError(null);
   }, [value]);
 
   const handleSelect = (species) => {
@@ -61,6 +76,7 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
   const handleInputChange = (e) => {
     const v = e.target.value;
     setQuery(v);
+    setFetchError(null);
     setOpen(true);
     if (v.trim().length >= MIN_SEARCH_LENGTH) {
       fetchOptions(v);
@@ -96,49 +112,93 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
     }
   }, [highlightIndex]);
 
-  const showDropdown = open && (options.length > 0 || loading);
+  const hasSearched = query.trim().length >= MIN_SEARCH_LENGTH;
+  const showDropdown = open && (options.length > 0 || loading || fetchError || (hasSearched && !loading));
+
+  useLayoutEffect(() => {
+    if (!showDropdown) {
+      setDropdownRect(null);
+      return;
+    }
+    const updateRect = () => {
+      if (wrapRef.current) {
+        setDropdownRect(wrapRef.current.getBoundingClientRect());
+      }
+    };
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [showDropdown, options.length, loading]);
+
   const hint = query.trim().length > 0 && query.trim().length < MIN_SEARCH_LENGTH
-    ? `Type ${MIN_SEARCH_LENGTH - query.trim().length} more to search`
+    ? `Skriv ${MIN_SEARCH_LENGTH - query.trim().length} tegn mere for at søge`
     : null;
 
+  const dropdownContent = showDropdown && dropdownRect && (
+    <ul
+      ref={listRef}
+      className="species-select-list species-select-list-portal"
+      role="listbox"
+      style={{
+        position: 'fixed',
+        top: dropdownRect.bottom,
+        left: dropdownRect.left,
+        width: Math.max(dropdownRect.width, 200),
+        minWidth: 200,
+      }}
+    >
+      {loading ? (
+        <li className="species-select-item loading">Indlæser…</li>
+      ) : fetchError ? (
+        <li className="species-select-item species-select-error">{fetchError}</li>
+      ) : options.length === 0 ? (
+        <li className="species-select-item species-select-empty">Ingen arter fundet</li>
+      ) : (
+        options.map((s, i) => (
+          <li
+            key={`${s.latin}-${s.code}-${i}`}
+            role="option"
+            aria-selected={i === highlightIndex}
+            className={`species-select-item ${i === highlightIndex ? 'highlight' : ''}`}
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }}
+            onMouseEnter={() => setHighlightIndex(i)}
+          >
+            {isLatin ? s.latin : s.danish}
+          </li>
+        ))
+      )}
+    </ul>
+  );
+
   return (
-    <div className="species-select-wrap">
+    <div ref={wrapRef} className="species-select-wrap">
       <input
         type="text"
         className="species-select-input"
         value={displayValue}
         onChange={handleInputChange}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={() => {
+          const close = () => {
+            setOpen(false);
+            const q = query.trim();
+            if (isLatin ? q !== (value || '').trim() : q !== (value || '').trim()) {
+              onSelect(isLatin ? { latin: q } : { danish: q });
+            }
+          };
+          setTimeout(close, 150);
+        }}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder={placeholder || (isLatin ? 'Art latin' : 'Art dansk')}
+        placeholder={placeholder || (isLatin ? 'Videnskabeligt navn' : 'Art')}
         autoComplete="off"
       />
       {hint && <span className="species-select-hint">{hint}</span>}
-      {showDropdown && (
-        <ul ref={listRef} className="species-select-list" role="listbox">
-          {loading ? (
-            <li className="species-select-item loading">Loading…</li>
-          ) : (
-            options.map((s, i) => (
-              <li
-                key={`${s.latin}-${s.code}`}
-                role="option"
-                aria-selected={i === highlightIndex}
-                className={`species-select-item ${i === highlightIndex ? 'highlight' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); handleSelect(s); }}
-                onMouseEnter={() => setHighlightIndex(i)}
-              >
-                {isLatin ? s.latin : s.danish}
-                <span className="species-select-item-sub">
-                  {isLatin ? s.danish : s.latin}
-                </span>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
+      {typeof document !== 'undefined' && dropdownContent && createPortal(dropdownContent, document.body)}
     </div>
   );
 }

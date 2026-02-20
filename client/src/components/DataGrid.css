@@ -46,12 +46,13 @@
 }
 
 .btn-calculate {
-  background-color: #2d7d4a;
+  background-color: #c41e3a;
   color: white;
+  font-weight: 600;
 }
 
 .btn-calculate:hover:not(:disabled) {
-  background-color: #236b3d;
+  background-color: #a01930;
 }
 
 .btn-calculate:disabled {
@@ -98,8 +99,8 @@
 
 .data-grid-table input:focus {
   outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  border-color: #c41e3a;
+  box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.2);
 }
 
 .data-grid-table input:disabled {
@@ -115,6 +116,27 @@
   border-radius: 4px;
   font-size: 0.9rem;
   background: #fff;
+}
+
+.data-grid-checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  min-height: 1.75rem;
+}
+
+.data-grid-checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #c41e3a;
+  cursor: pointer;
+}
+
+.data-grid-checkbox-label {
+  font-size: 0.9rem;
+  color: #333;
+  user-select: none;
 }
 
 .data-grid-table .col-actions {

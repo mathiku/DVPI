@@ -5,19 +5,33 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  padding: 2rem;
+  background-color: #000;
+  padding: 1.5rem 2rem;
   color: white;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.App-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .App-header h1 {
-  margin-bottom: 0.5rem;
-  font-size: 2rem;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .App-header p {
-  font-size: 1rem;
+  margin: 0;
+  font-size: 0.95rem;
   opacity: 0.9;
 }
 
@@ -33,15 +47,16 @@
   margin-top: 1rem;
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
-  background-color: #4a90e2;
+  background-color: #c41e3a;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .open-grid-button:hover {
-  background-color: #357abd;
+  background-color: #a01930;
 }
 
 .loading {

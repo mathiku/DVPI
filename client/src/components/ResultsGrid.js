@@ -3,8 +3,7 @@ import './ResultsGrid.css';
 
 function ResultsGrid({ results, totalRows }) {
   const handleDownload = () => {
-    // Convert results to CSV
-    const headers = ['Sheet', 'DVPI', 'DK', 'EQR'];
+    const headers = ['Ark', 'DVPI', 'DK', 'EQR'];
     const rows = results.map(r => [
       r.sheet || '',
       r.dvpi || '',
@@ -22,7 +21,7 @@ function ResultsGrid({ results, totalRows }) {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `dvpi_results_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `dvpi_resultater_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -36,19 +35,19 @@ function ResultsGrid({ results, totalRows }) {
   return (
     <div className="results-container">
       <div className="results-header">
-        <h2>Results</h2>
+        <h2>Resultater</h2>
         <p className="results-summary">
-          Processed {totalRows} rows from {results.length} sheet(s)
+          Behandlet {totalRows} rækker fra {results.length} ark
         </p>
         <button onClick={handleDownload} className="download-button">
-          Download Results as CSV
+          Download resultater som CSV
         </button>
       </div>
       <div className="results-table-wrapper">
         <table className="results-table">
           <thead>
             <tr>
-              <th>Sheet</th>
+              <th>Ark</th>
               <th>DVPI</th>
               <th>DK</th>
               <th>EQR</th>
@@ -57,8 +56,8 @@ function ResultsGrid({ results, totalRows }) {
           <tbody>
             {results.map((result, index) => (
               <tr key={index} className={result.error ? 'error-row' : ''}>
-                <td>{result.sheet || '(unknown)'}</td>
-                <td>{result.error ? 'Error' : (result.dvpi || '-')}</td>
+                <td>{result.sheet || '(ukendt)'}</td>
+                <td>{result.error ? 'Fejl' : (result.dvpi || '-')}</td>
                 <td>{result.error ? '' : (result.dk || '-')}</td>
                 <td>{result.error ? '' : (result.eqr || '-')}</td>
               </tr>

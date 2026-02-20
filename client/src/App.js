@@ -49,8 +49,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>DVPI Calculator</h1>
-        <p>Upload a CSV file or enter data in the grid to calculate DVPI, DK, and EQR values</p>
+        <img src={process.env.PUBLIC_URL + '/wsplogo.png'} alt="WSP" className="App-logo" />
+        <h1>DVPI-beregner</h1>
+        <p>Upload en CSV-fil eller indtast data i tabellen for at beregne DVPI-, DK- og EQR-værdier</p>
       </header>
       <main className="App-main">
         <FileUpload
@@ -64,17 +65,17 @@ function App() {
             className="open-grid-button"
             onClick={() => setGridOpen(true)}
           >
-            Open grid for manual entry
+            Åbn tabel til manuel indtastning
           </button>
         )}
         {loading && (
           <div className="loading">
-            <p>Processing file and calculating DVPI values...</p>
+            <p>Behandler fil og beregner DVPI-værdier…</p>
           </div>
         )}
         {error && (
           <div className="error">
-            <p>Error: {error}</p>
+            <p>Fejl: {error}</p>
           </div>
         )}
         {showGrid && (

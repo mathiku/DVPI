@@ -9,7 +9,7 @@ const fs = require('fs');
 const { parseCSV, processData, callDVPI, searchSpecies } = require('./dvpiProcessor');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4001;
 
 // Middleware
 app.use(cors());
@@ -41,14 +41,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Species search for grid dropdowns (min 3 chars to avoid huge payloads)
+// Species search for grid dropdowns (min 3 chars). type=latin søger kun LatinName, type=dansk kun DanishName.
 app.get('/api/species', (req, res) => {
   const q = (req.query.q || '').trim();
+  const type = (req.query.type || '').toLowerCase();
   if (q.length < 3) {
     return res.json([]);
   }
   try {
-    const list = searchSpecies(q);
+    const list = searchSpecies(q, type === 'dansk' ? 'dansk' : type === 'latin' ? 'latin' : undefined);
     res.json(list);
   } catch (error) {
     console.error('Species search error:', error);

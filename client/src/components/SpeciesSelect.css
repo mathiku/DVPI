@@ -15,8 +15,8 @@
 
 .species-select-input:focus {
   outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  border-color: #c41e3a;
+  box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.2);
 }
 
 .species-select-input:disabled {
@@ -45,7 +45,7 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10;
+  z-index: 1000;
 }
 
 .species-select-item {
@@ -65,7 +65,7 @@
 
 .species-select-item:hover,
 .species-select-item.highlight {
-  background-color: #e8f4ff;
+  background-color: #fde8eb;
 }
 
 .species-select-item-sub {
@@ -76,4 +76,16 @@
 .species-select-item.loading {
   cursor: default;
   color: #666;
+}
+
+.species-select-item.species-select-error {
+  color: #c41e3a;
+  cursor: default;
+  font-size: 0.85rem;
+}
+
+.species-select-item.species-select-empty {
+  color: #888;
+  cursor: default;
+  font-style: italic;
 }

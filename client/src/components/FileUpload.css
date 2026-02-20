@@ -13,13 +13,13 @@
 }
 
 .file-upload-area:hover {
-  border-color: #4a90e2;
-  background-color: #f8f9fa;
+  border-color: #c41e3a;
+  background-color: #faf8f8;
 }
 
 .file-upload-area.dragging {
-  border-color: #4a90e2;
-  background-color: #e8f4f8;
+  border-color: #c41e3a;
+  background-color: #fde8eb;
   transform: scale(1.02);
 }
 
@@ -37,7 +37,7 @@
 
 .file-upload-area:hover .upload-content svg,
 .file-upload-area.dragging .upload-content svg {
-  color: #4a90e2;
+  color: #c41e3a;
 }
 
 .upload-text {

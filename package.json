@@ -10,21 +10,29 @@
     "install-all": "npm install && cd client && npm install",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop dvpi-web",
-    "pm2:restart": "pm2 restart dvpi-web"
+    "pm2:restart": "pm2 restart dvpi-web",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed --workers=1",
+    "test:e2e:ui": "playwright test --ui"
   },
-  "keywords": ["dvpi", "vegetation", "calculator"],
+  "keywords": [
+    "dvpi",
+    "vegetation",
+    "calculator"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1",
-    "csv-parse": "^5.5.2",
     "axios": "^1.6.2",
-    "xml2js": "^0.6.2",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "nodemon": "^3.0.2"
   }
 }

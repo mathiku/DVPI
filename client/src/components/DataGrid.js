@@ -2,17 +2,23 @@ import React, { useState, useCallback, useEffect } from 'react';
 import './DataGrid.css';
 import SpeciesSelect from './SpeciesSelect';
 
-// Columns the backend expects (Danish vegetation format). Art dansk syncs with Art latin.
+// Kolonner backend forventer (dansk vegetationsformat). Rækkefølge: transekt, kvadrat, art, videnskabeligt, uden art.
 const DEFAULT_COLUMNS = [
   'Transektundersøgelse',
   'Kvadrat nummer',
-  'Arts tom',
-  'Art latin',
   'Art dansk',
-  'Dækningsgrad'
+  'Art latin',
+  'Arts tom'
 ];
 
-const ARTS_TOM_VALUES = ['', 'Nej', 'Ja'];
+const COLUMN_LABELS = {
+  'Transektundersøgelse': 'Transektnr.',
+  'Kvadrat nummer': 'Kvadratnr.',
+  'Art dansk': 'Art',
+  'Art latin': 'Videnskabeligt navn',
+  'Arts tom': 'Uden art'
+};
+
 const SPECIES_DISABLED_VALUES = ['ja', 'yes', 'true', '1'];
 
 function isArtsTomTrue(val) {
@@ -50,17 +56,19 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
       if (col === 'Arts tom' && isArtsTomTrue(value)) {
         row['Art latin'] = '';
         row['Art dansk'] = '';
-        row['Dækningsgrad'] = '';
       }
       onRecordsChange?.(next);
       return next;
     });
   }, [onRecordsChange]);
 
-  const updateSpecies = useCallback((rowIndex, { latin, danish }) => {
+  const updateSpecies = useCallback((rowIndex, payload) => {
     setRows(prev => {
+      const updates = {};
+      if (payload.latin !== undefined) updates['Art latin'] = payload.latin;
+      if (payload.danish !== undefined) updates['Art dansk'] = payload.danish;
       const next = prev.map((r, i) =>
-        i === rowIndex ? { ...r, 'Art latin': latin, 'Art dansk': danish } : r
+        i === rowIndex ? { ...r, ...updates } : r
       );
       onRecordsChange?.(next);
       return next;
@@ -91,16 +99,17 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
     const value = row[col] ?? '';
 
     if (col === 'Arts tom') {
+      const checked = isArtsTomTrue(value);
       return (
-        <select
-          value={value}
-          onChange={e => updateCell(rowIndex, col, e.target.value)}
-          className="data-grid-select"
-        >
-          {ARTS_TOM_VALUES.map(opt => (
-            <option key={opt || 'empty'} value={opt}>{opt || '—'}</option>
-          ))}
-        </select>
+        <label className="data-grid-checkbox-wrap">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={e => updateCell(rowIndex, col, e.target.checked ? 'Ja' : 'Nej')}
+            className="data-grid-checkbox"
+          />
+          <span className="data-grid-checkbox-label">{checked ? 'Ja' : 'Nej'}</span>
+        </label>
       );
     }
     if (col === 'Art latin') {
@@ -110,7 +119,7 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           type="latin"
           onSelect={payload => updateSpecies(rowIndex, payload)}
           disabled={disabledSpecies}
-          placeholder="Art latin"
+          placeholder="Videnskabeligt navn"
         />
       );
     }
@@ -121,18 +130,7 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           type="dansk"
           onSelect={payload => updateSpecies(rowIndex, payload)}
           disabled={disabledSpecies}
-          placeholder="Art dansk"
-        />
-      );
-    }
-    if (col === 'Dækningsgrad') {
-      return (
-        <input
-          type="text"
-          value={value}
-          onChange={e => updateCell(rowIndex, col, e.target.value)}
-          placeholder={col}
-          disabled={disabledSpecies}
+          placeholder="Art"
         />
       );
     }
@@ -141,7 +139,7 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
         type="text"
         value={value}
         onChange={e => updateCell(rowIndex, col, e.target.value)}
-        placeholder={col}
+        placeholder={COLUMN_LABELS[col] ?? col}
       />
     );
   };
@@ -149,15 +147,15 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
   return (
     <div className="data-grid-container">
       <div className="data-grid-header">
-        <h2>Input data</h2>
+        <h2>Indtastningsdata</h2>
         <p className="data-grid-hint">
-          Edit the table below. Add rows for manual entry, or use data loaded from a CSV.
-          When &quot;Arts tom&quot; is Ja, species and Dækningsgrad are cleared and disabled.
-          Type at least 3 characters in Art latin or Art dansk to search; selecting one updates the other.
+          Rediger tabellen nedenfor. Tilføj rækker til manuel indtastning, eller brug data fra en CSV.
+          Når &quot;Uden art&quot; er afkrydset, tømmes og deaktiveres art-felterne.
+          Skriv mindst 3 tegn i Videnskabeligt navn eller Art for at søge; valg opdaterer begge.
         </p>
         <div className="data-grid-actions">
           <button type="button" className="btn-add-row" onClick={addRow}>
-            + Add row
+            + Tilføj række
           </button>
           <button
             type="button"
@@ -165,7 +163,7 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
             onClick={() => onCalculate?.(rows)}
             disabled={calculating || rows.length === 0}
           >
-            {calculating ? 'Calculating…' : 'Re-calculate DVPI'}
+            {calculating ? 'Beregner…' : 'Genberegn DVPI'}
           </button>
         </div>
       </div>
@@ -174,9 +172,9 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           <thead>
             <tr>
               {columns.map(col => (
-                <th key={col}>{col}</th>
+                <th key={col}>{COLUMN_LABELS[col] ?? col}</th>
               ))}
-              <th className="col-actions">Actions</th>
+              <th className="col-actions" aria-label="Fjern række"></th>
             </tr>
           </thead>
           <tbody>
@@ -193,9 +191,9 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
                     className="btn-remove-row"
                     onClick={() => removeRow(rowIndex)}
                     disabled={rows.length <= 1}
-                    title="Remove row"
+                    title="Fjern række"
                   >
-                    Remove
+                    Fjern
                   </button>
                 </td>
               </tr>

@@ -12,8 +12,9 @@ let speciesCodesLoaded = false;
 function loadSpeciesCodes() {
   if (speciesCodesLoaded) return;
   
-  // Try to find stancode file
+  // Try to find stancode file (foretræk input/stancodesimple.csv)
   const candidates = [
+    path.join(__dirname, '..', 'input', 'stancodesimple.csv'),
     path.join(__dirname, '..', '..', 'DVPImaster', 'bin', 'Debug', 'net8.0-windows', 'stancode_utf8.csv'),
     path.join(__dirname, '..', '..', 'DVPIClientApp', 'dvpi_app', 'data', 'stancode_utf8.csv'),
     path.join(__dirname, 'stancode_utf8.csv')
@@ -28,30 +29,43 @@ function loadSpeciesCodes() {
   }
   
   if (!found) {
-    console.warn('stancode_utf8.csv not found. Species code mapping will be limited.');
+    console.warn('stancode-fil ikke fundet. Artskode-mapping vil være begrænset.');
     speciesCodesLoaded = true;
     return;
   }
+  
+  const isSimpleFormat = found.endsWith('stancodesimple.csv');
+  const delimiter = isSimpleFormat ? ',' : ';';
   
   try {
     const content = fs.readFileSync(found, 'utf-8');
     const records = parse(content, {
       columns: true,
       skip_empty_lines: true,
-      delimiter: ';'
+      delimiter
     });
     
     for (const record of records) {
-      const listId = record.CodeListIdentifier || '';
-      if (listId !== '1064') continue;
-      
-      const scCode = record.ScCode || '';
-      const latinName = record.LatinName || '';
-      const danishName = (record.DanishName || record.Art || record.Navn || record.VernacularName || '').trim() || latinName;
-      
-      if (scCode && latinName) {
-        latinToCode.set(latinName.toLowerCase(), scCode);
-        speciesList.push({ latin: latinName, danish: danishName, code: scCode });
+      if (isSimpleFormat) {
+        // stancodesimple.csv: kolonner danish, latin, stancode (små bogstaver i header)
+        const code = (record.stancode || '').toString().trim();
+        const latin = (record.latin || record.LatinName || '').trim();
+        let danish = (record.danish || record.DanishName || '').trim();
+        if (danish === '-') danish = '';
+        if (code && latin) {
+          latinToCode.set(latin.toLowerCase(), code);
+          speciesList.push({ latin, danish, code });
+        }
+      } else {
+        const listId = record.CodeListIdentifier || '';
+        if (listId !== '1064') continue;
+        const scCode = record.ScCode || '';
+        const latinName = record.LatinName || '';
+        const danishName = (record.DanishName || record.Art || record.Navn || record.VernacularName || '').trim() || latinName;
+        if (scCode && latinName) {
+          latinToCode.set(latinName.toLowerCase(), scCode);
+          speciesList.push({ latin: latinName, danish: danishName, code: scCode });
+        }
       }
     }
     
@@ -63,16 +77,18 @@ function loadSpeciesCodes() {
   }
 }
 
-/** Returns species matching query (min 3 chars). Search on both latin and danish. */
-function searchSpecies(q) {
+/** Returns species matching query (min 3 chars). type=latin: kun LatinName, type=dansk: kun DanishName. */
+function searchSpecies(q, type) {
   loadSpeciesCodes();
   const term = (q || '').trim().toLowerCase();
   if (term.length < 3) return [];
-  return speciesList.filter(
-    s =>
-      s.latin.toLowerCase().includes(term) ||
-      s.danish.toLowerCase().includes(term)
-  ).slice(0, 100);
+  const byLatin = type === 'latin';
+  const byDanish = type === 'dansk';
+  return speciesList.filter(s => {
+    if (byLatin) return s.latin.toLowerCase().includes(term);
+    if (byDanish) return (s.danish || '').toLowerCase().includes(term);
+    return s.latin.toLowerCase().includes(term) || (s.danish || '').toLowerCase().includes(term);
+  }).slice(0, 100);
 }
 
 // Initialize on module load
@@ -195,8 +211,8 @@ function processData(records) {
   const idxTran = findColumn('Transektundersøgelse');
   const idxKv = findColumn('Kvadrat nummer');
   
-  if (idxLatin < 0 || idxCover < 0) {
-    throw new Error('Missing required columns: Art latin or Dækningsgrad');
+  if (idxLatin < 0) {
+    throw new Error('Missing required column: Art latin (Videnskabeligt navn)');
   }
   
   // Process rows
@@ -213,7 +229,7 @@ function processData(records) {
     }
     
     const latin = idxLatin < values.length ? (values[idxLatin] || '').trim() : '';
-    const cover = idxCover < values.length ? (values[idxCover] || '').trim() : '';
+    const cover = idxCover >= 0 && idxCover < values.length ? (values[idxCover] || '').trim() : '';
     const tran = idxTran >= 0 && idxTran < values.length ? (values[idxTran] || '').trim() : '';
     const kv = idxKv >= 0 && idxKv < values.length ? (values[idxKv] || '').trim() : '';
     

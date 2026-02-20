@@ -7,11 +7,11 @@ A web-based version of the DVPImaster application for calculating DVPI (Danish V
 - Upload CSV files with Danish vegetation data
 - Drag-and-drop file upload support
 - Automatic parsing of Danish CSV format with columns:
-  - Art latin (Latin species name)
-  - Dækningsgrad (Coverage)
-  - Transektundersøgelse (Transect)
-  - Kvadrat nummer (Quadrat number)
-  - Arts tom (Empty species flag)
+  - Art latin / Videnskabeligt navn (Latin species name)
+  - Transektundersøgelse / Transektnr. (Transect)
+  - Kvadrat nummer / Kvadratnr. (Quadrat number)
+  - Arts tom / Uden art (Empty species flag)
+  - Dækningsgrad (optional; not shown in manual entry grid)
 - Species code mapping from stancode_utf8.csv
 - SOAP service integration with DVPI calculation service
 - Results display in a downloadable grid format
@@ -86,10 +86,10 @@ The application expects CSV files with the following columns (Danish headers):
 - `Stedtype`
 - `StedID`
 - `Art latin` (required)
-- `Dækningsgrad` (required)
 - `Transektundersøgelse`
 - `Kvadrat nummer`
 - `Arts tom` (rows with "Ja" are skipped)
+- `Dækningsgrad` (optional; used if present in CSV)
 
 The CSV can be semicolon, comma, or tab-delimited.
 
