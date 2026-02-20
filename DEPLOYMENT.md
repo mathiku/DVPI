@@ -2,6 +2,44 @@
 
 This guide explains how to deploy the DVPI Web application to a remote server.
 
+## Upsun (recommended)
+
+The project includes Upsun configuration in `.upsun/config.yaml`.
+
+### Prerequisites
+
+- [Upsun CLI](https://docs.upsun.com/get-started/here/cli.html) installed and logged in: `upsun auth:login`
+- A Git repository (the project must be in a Git repo to push)
+
+### Push to Upsun
+
+1. **From the project root** (the directory containing `.upsun/` and `package.json`):
+
+   ```bash
+   # Commit Upsun config if not already committed
+   git add . && git commit -m "Add or update Upsun configuration" --allow-empty
+
+   # Push to Upsun (creates/updates the project and deploys)
+   upsun push
+   ```
+
+2. **If you don’t have an Upsun project yet**, the first `upsun push` will prompt you to create one or link an existing one.
+
+3. **Set environment variables** for the DVPI service (Upsun Console or CLI):
+
+   ```bash
+   upsun variable:create env:DVPI_USERNAME --value 'sa-feltreg' --visible-build false
+   upsun variable:create env:DVPI_PASSWORD --value 'your-password' --visible-build false
+   ```
+
+   Or in the Upsun Console: Project → your environment → Variables.
+
+4. **URL**: After a successful push, the site URL is shown in the CLI output and in the Upsun Console.
+
+---
+
+## Traditional server deployment
+
 ## Prerequisites
 
 - Node.js (v14 or higher) installed on the server
