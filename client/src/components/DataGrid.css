@@ -34,12 +34,22 @@
 
 .btn-add-row,
 .btn-calculate,
-.btn-reset-grid {
+.btn-reset-grid,
+.btn-download-csv {
   padding: 0.5rem 1rem;
   border-radius: 4px;
   font-size: 0.95rem;
   cursor: pointer;
   border: none;
+}
+
+.btn-download-csv {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.btn-download-csv:hover {
+  background-color: #dee2e6;
 }
 
 .btn-reset-grid {

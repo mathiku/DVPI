@@ -34,6 +34,20 @@ function ensureRecord(row) {
   return r;
 }
 
+function escapeCsvField(val) {
+  const s = String(val ?? '');
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function rowsToCsv(rows, columns) {
+  const header = columns.map(c => escapeCsvField(COLUMN_LABELS[c] ?? c)).join(',');
+  const dataRows = rows.map(row =>
+    columns.map(col => escapeCsvField(row[col] ?? '')).join(',')
+  );
+  return [header, ...dataRows].join('\r\n');
+}
+
 function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
   const [rows, setRows] = useState(() =>
     records.length > 0
@@ -88,6 +102,17 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
     setRows(next);
     onRecordsChange?.(next);
   }, [onRecordsChange]);
+
+  const downloadGridAsCsv = useCallback(() => {
+    const csv = rowsToCsv(rows, DEFAULT_COLUMNS);
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `indtastningsdata-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [rows]);
 
   const removeRow = useCallback((rowIndex) => {
     setRows(prev => {
@@ -170,6 +195,9 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
             disabled={calculating || rows.length === 0}
           >
             {calculating ? 'Beregner…' : 'Genberegn DVPI'}
+          </button>
+          <button type="button" className="btn-download-csv" onClick={downloadGridAsCsv}>
+            Hent CSV
           </button>
           <button type="button" className="btn-reset-grid" onClick={clearGrid}>
             Nulstil ark
