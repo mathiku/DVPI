@@ -66,13 +66,12 @@ test.describe('Artsvælger (Videnskabeligt navn / Art)', () => {
   }) => {
     const latinInput = page.getByPlaceholder('Videnskabeligt navn').first();
     await latinInput.click();
-    await latinInput.fill('Lem');
+    await latinInput.fill('Lemanea fluviatilis');
     await expect(page.getByRole('listbox')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('option').filter({ hasText: 'Lemanea' }).first()).toBeVisible();
-    await page.getByRole('option').filter({ hasText: 'Lemanea' }).first().click();
-    await expect(latinInput).toHaveValue(/Lemanea/);
+    await page.getByRole('option').filter({ hasText: 'Lemanea fluviatilis' }).first().click();
+    await expect(latinInput).toHaveValue('Lemanea fluviatilis');
     const artInput = page.getByPlaceholder('Art').first();
-    await expect(artInput).not.toHaveValue('');
+    await expect(artInput).toHaveValue('Strømtråd');
   });
 
   test('søgning i Art (dansk) viser danske valgmuligheder og udfylder begge felter korrekt', async ({
