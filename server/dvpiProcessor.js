@@ -362,6 +362,12 @@ async function callDVPI(requestXml) {
   
   const endpoint = 'http://service.dvpi.au.dk/1.0.0/DCE_DVPI.svc';
   
+  // Log payload sent to API (redact password in logs)
+  const payloadForLog = soapEnvelope.replace(/PW="[^"]*"/, 'PW="***REDACTED***"');
+  console.log('--- DVPI API request payload ---');
+  console.log(payloadForLog);
+  console.log('--- end payload ---');
+  
   try {
     const response = await axios.post(endpoint, soapEnvelope, {
       headers: {
@@ -371,6 +377,12 @@ async function callDVPI(requestXml) {
       },
       timeout: 30000
     });
+    
+    // Log full response from API
+    console.log('--- DVPI API full response ---');
+    console.log('Status:', response.status);
+    console.log('Data:', response.data);
+    console.log('--- end response ---');
     
     return parseDVPIResponse(response.data);
   } catch (error) {

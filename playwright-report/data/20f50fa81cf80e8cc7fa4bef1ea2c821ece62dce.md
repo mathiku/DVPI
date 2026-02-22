@@ -1,0 +1,121 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - img "WSP" [ref=e5]
+    - heading "DVPI-beregner" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Upload en CSV-fil eller indtast data i tabellen for at beregne DVPI-, DK- og EQR-værdier
+  - main [ref=e8]:
+    - generic [ref=e11] [cursor=pointer]:
+      - img [ref=e12]
+      - paragraph [ref=e15]: Træk og slip en CSV-fil her, eller klik for at vælge
+      - paragraph [ref=e16]: Kun CSV-filer
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - heading "Indtastningsdata" [level=2] [ref=e19]
+        - paragraph [ref=e20]: Rediger tabellen nedenfor. Tilføj rækker til manuel indtastning, eller brug data fra en CSV. Når "Uden art" er afkrydset, tømmes og deaktiveres art-felterne. Skriv mindst 3 tegn i Videnskabeligt navn eller Art for at søge; valg opdaterer begge.
+        - generic [ref=e21]:
+          - button "+ Tilføj række" [ref=e22] [cursor=pointer]
+          - button "Genberegn DVPI" [ref=e23] [cursor=pointer]
+      - table [ref=e25]:
+        - rowgroup [ref=e26]:
+          - row "Transektnr. Kvadratnr. Art Videnskabeligt navn Uden art Fjern række" [ref=e27]:
+            - columnheader "Transektnr." [ref=e28]
+            - columnheader "Kvadratnr." [ref=e29]
+            - columnheader "Art" [ref=e30]
+            - columnheader "Videnskabeligt navn" [ref=e31]
+            - columnheader "Uden art" [ref=e32]
+            - columnheader "Fjern række" [ref=e33]
+        - rowgroup [ref=e34]:
+          - row "1 1 Strømtråd Lemanea fluviatilis Nej Fjern" [ref=e35]:
+            - cell "1" [ref=e36]:
+              - textbox "Transektnr." [ref=e37]: "1"
+            - cell "1" [ref=e38]:
+              - textbox "Kvadratnr." [ref=e39]: "1"
+            - cell "Strømtråd" [ref=e40]:
+              - textbox "Art" [ref=e42]: Strømtråd
+            - cell "Lemanea fluviatilis" [ref=e43]:
+              - textbox "Videnskabeligt navn" [ref=e45]: Lemanea fluviatilis
+            - cell "Nej" [ref=e46]:
+              - generic [ref=e47] [cursor=pointer]:
+                - checkbox "Nej" [ref=e48]
+                - generic [ref=e49]: Nej
+            - cell "Fjern" [ref=e50]:
+              - button "Fjern" [ref=e51] [cursor=pointer]
+          - row "1 2 Chondrus crispus Nej Fjern" [ref=e52]:
+            - cell "1" [ref=e53]:
+              - textbox "Transektnr." [ref=e54]: "1"
+            - cell "2" [ref=e55]:
+              - textbox "Kvadratnr." [ref=e56]: "2"
+            - cell [ref=e57]:
+              - textbox "Art" [ref=e59]
+            - cell "Chondrus crispus" [ref=e60]:
+              - textbox "Videnskabeligt navn" [ref=e62]: Chondrus crispus
+            - cell "Nej" [ref=e63]:
+              - generic [ref=e64] [cursor=pointer]:
+                - checkbox "Nej" [ref=e65]
+                - generic [ref=e66]: Nej
+            - cell "Fjern" [ref=e67]:
+              - button "Fjern" [ref=e68] [cursor=pointer]
+          - row "Nej Fjern" [ref=e69]:
+            - cell [ref=e70]:
+              - textbox "Transektnr." [ref=e71]
+            - cell [ref=e72]:
+              - textbox "Kvadratnr." [ref=e73]
+            - cell [ref=e74]:
+              - textbox "Art" [ref=e76]
+            - cell [ref=e77]:
+              - textbox "Videnskabeligt navn" [ref=e79]
+            - cell "Nej" [ref=e80]:
+              - generic [ref=e81] [cursor=pointer]:
+                - checkbox "Nej" [ref=e82]
+                - generic [ref=e83]: Nej
+            - cell "Fjern" [ref=e84]:
+              - button "Fjern" [ref=e85] [cursor=pointer]
+          - row "Nej Fjern" [ref=e86]:
+            - cell [ref=e87]:
+              - textbox "Transektnr." [ref=e88]
+            - cell [ref=e89]:
+              - textbox "Kvadratnr." [ref=e90]
+            - cell [ref=e91]:
+              - textbox "Art" [ref=e93]
+            - cell [ref=e94]:
+              - textbox "Videnskabeligt navn" [ref=e96]
+            - cell "Nej" [ref=e97]:
+              - generic [ref=e98] [cursor=pointer]:
+                - checkbox "Nej" [ref=e99]
+                - generic [ref=e100]: Nej
+            - cell "Fjern" [ref=e101]:
+              - button "Fjern" [ref=e102] [cursor=pointer]
+          - row "Nej Fjern" [ref=e103]:
+            - cell [ref=e104]:
+              - textbox "Transektnr." [ref=e105]
+            - cell [ref=e106]:
+              - textbox "Kvadratnr." [ref=e107]
+            - cell [ref=e108]:
+              - textbox "Art" [ref=e110]
+            - cell [ref=e111]:
+              - textbox "Videnskabeligt navn" [ref=e113]
+            - cell "Nej" [ref=e114]:
+              - generic [ref=e115] [cursor=pointer]:
+                - checkbox "Nej" [ref=e116]
+                - generic [ref=e117]: Nej
+            - cell "Fjern" [ref=e118]:
+              - button "Fjern" [ref=e119] [cursor=pointer]
+          - row "Nej Fjern" [ref=e120]:
+            - cell [ref=e121]:
+              - textbox "Transektnr." [ref=e122]
+            - cell [ref=e123]:
+              - textbox "Kvadratnr." [ref=e124]
+            - cell [ref=e125]:
+              - textbox "Art" [ref=e127]
+            - cell [ref=e128]:
+              - textbox "Videnskabeligt navn" [ref=e130]
+            - cell "Nej" [ref=e131]:
+              - generic [ref=e132] [cursor=pointer]:
+                - checkbox "Nej" [ref=e133]
+                - generic [ref=e134]: Nej
+            - cell "Fjern" [ref=e135]:
+              - button "Fjern" [ref=e136] [cursor=pointer]
+```

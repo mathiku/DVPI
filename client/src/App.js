@@ -35,7 +35,14 @@ function App() {
     setRecalculating(true);
     setError(null);
     try {
-      const response = await axios.post('/api/process-json', { records: rows });
+      // Trim payload to only what the backend needs (avoids 413 Payload Too Large)
+      const trimmedRecords = rows.map((r) => ({
+        'Transektundersøgelse': r['Transektundersøgelse'] ?? '',
+        'Kvadrat nummer': r['Kvadrat nummer'] ?? '',
+        'Art latin': r['Art latin'] ?? '',
+        'Arts tom': r['Arts tom'] ?? '',
+      }));
+      const response = await axios.post('/api/process-json', { records: trimmedRecords });
       setResults(response.data);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -54,6 +61,9 @@ function App() {
         <p>Upload en CSV-fil eller indtast data i tabellen for at beregne DVPI-, DK- og EQR-værdier</p>
       </header>
       <main className="App-main">
+        {results && !loading && (
+          <ResultsGrid results={results.results} totalRows={results.totalRows} />
+        )}
         <FileUpload
           onFileProcessed={handleFileProcessed}
           onError={handleError}
@@ -84,9 +94,6 @@ function App() {
             onCalculate={handleRecalculate}
             calculating={recalculating}
           />
-        )}
-        {results && !loading && (
-          <ResultsGrid results={results.results} totalRows={results.totalRows} />
         )}
       </main>
     </div>
