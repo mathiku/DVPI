@@ -47,7 +47,7 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLatin]);
 
   useEffect(() => {
     if (!query || query.length < MIN_SEARCH_LENGTH) {
