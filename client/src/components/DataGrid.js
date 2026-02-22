@@ -83,6 +83,12 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
     });
   }, [onRecordsChange]);
 
+  const clearGrid = useCallback(() => {
+    const next = [ensureRecord({})];
+    setRows(next);
+    onRecordsChange?.(next);
+  }, [onRecordsChange]);
+
   const removeRow = useCallback((rowIndex) => {
     setRows(prev => {
       if (prev.length <= 1) return prev;
@@ -164,6 +170,9 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
             disabled={calculating || rows.length === 0}
           >
             {calculating ? 'Beregner…' : 'Genberegn DVPI'}
+          </button>
+          <button type="button" className="btn-reset-grid" onClick={clearGrid}>
+            Nulstil ark
           </button>
         </div>
       </div>

@@ -325,25 +325,21 @@ function buildSoapInput(rows) {
     return a.ID.localeCompare(b.ID);
   });
   
-  // Build XML
-  const items = uniqueTriplets.map(tr => 
-    `<Sc1064 T="${tr.T}" K="${tr.K}" ID="${tr.ID}"/>`
-  ).join('');
-  
+  // Build inner XML to match working Postman format: newline after opening tag, each Sc1064 on its own line
   const username = process.env.DVPI_USERNAME || 'sa-feltreg';
   const password = process.env.DVPI_PASSWORD || 'mEGHWppAc+UuFLFiNtq+NQ==';
-  
-  // Escape XML
   const escapeXml = (str) => {
-    return str
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
   };
-  
-  return `<DVPI_Input UID="${escapeXml(username)}" PW="${escapeXml(password)}">${items}</DVPI_Input>`;
+  const items = uniqueTriplets
+    .map(tr => `<Sc1064 T="${tr.T}" K="${tr.K}" ID="${tr.ID}"/>`)
+    .join('\n');
+  return `<DVPI_Input UID="${escapeXml(username)}" PW="${escapeXml(password)}">\n${items}\n</DVPI_Input>`;
 }
 
 async function callDVPI(requestXml) {
@@ -396,12 +392,25 @@ async function callDVPI(requestXml) {
 }
 
 function parseDVPIResponse(soapResponse) {
+  if (typeof soapResponse !== 'string') {
+    return { dvpi: '', dk: '', eqr: '' };
+  }
   try {
-    // Simple regex parsing (more robust than XML parsing for this use case)
-    const dvpiMatch = soapResponse.match(/Indeks="([^"]+)"/);
-    const dkMatch = soapResponse.match(/DKIndeks="([^"]+)"/);
-    const eqrMatch = soapResponse.match(/EQR="([^"]+)"/);
-    
+    // WSDL says response is DVPIResponse.DVPIResult (xs:string). Result may be XML inside that element.
+    let toParse = soapResponse;
+    const resultMatch = soapResponse.match(/<DVPIResult[^>]*>([\s\S]*?)<\/DVPIResult>/i);
+    if (resultMatch && resultMatch[1]) {
+      let inner = resultMatch[1];
+      if (inner.includes('<![CDATA[')) {
+        const cdataMatch = inner.match(/<!\[CDATA\[([\s\S]*?)\]\]>/);
+        if (cdataMatch) inner = cdataMatch[1];
+      }
+      toParse = inner;
+    }
+    // Match attribute values (allow various casings and optional namespace)
+    const dvpiMatch = toParse.match(/Indeks="([^"]*)"/i);
+    const dkMatch = toParse.match(/DKIndeks="([^"]*)"/i);
+    const eqrMatch = toParse.match(/EQR="([^"]*)"/i);
     return {
       dvpi: dvpiMatch ? dvpiMatch[1] : '',
       dk: dkMatch ? dkMatch[1] : '',

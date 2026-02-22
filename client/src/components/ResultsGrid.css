@@ -4,6 +4,12 @@
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s ease;
+}
+
+.results-container--calculating {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .results-header {
@@ -39,6 +45,11 @@
 
 .download-button:hover {
   background-color: #a01930;
+}
+
+.download-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .results-table-wrapper {

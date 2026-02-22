@@ -61,8 +61,12 @@ function App() {
         <p>Upload en CSV-fil eller indtast data i tabellen for at beregne DVPI-, DK- og EQR-værdier</p>
       </header>
       <main className="App-main">
-        {results && !loading && (
-          <ResultsGrid results={results.results} totalRows={results.totalRows} />
+        {results && (
+          <ResultsGrid
+            results={results.results}
+            totalRows={results.totalRows}
+            calculating={loading || recalculating}
+          />
         )}
         <FileUpload
           onFileProcessed={handleFileProcessed}

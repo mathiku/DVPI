@@ -1,7 +1,7 @@
 import React from 'react';
 import './ResultsGrid.css';
 
-function ResultsGrid({ results, totalRows }) {
+function ResultsGrid({ results, totalRows, calculating }) {
   const handleDownload = () => {
     const headers = ['Ark', 'DVPI', 'DK', 'EQR'];
     const rows = results.map(r => [
@@ -33,13 +33,18 @@ function ResultsGrid({ results, totalRows }) {
   }
 
   return (
-    <div className="results-container">
+    <div className={`results-container${calculating ? ' results-container--calculating' : ''}`}>
       <div className="results-header">
         <h2>Resultater</h2>
         <p className="results-summary">
           Behandlet {totalRows} rækker fra {results.length} ark
         </p>
-        <button onClick={handleDownload} className="download-button">
+        <button
+          onClick={handleDownload}
+          className="download-button"
+          disabled={calculating}
+          aria-busy={calculating}
+        >
           Download resultater som CSV
         </button>
       </div>
