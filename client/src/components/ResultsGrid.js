@@ -1,15 +1,33 @@
 import React from 'react';
 import './ResultsGrid.css';
 
+/** EQR to DVPI class (1-5) and Danish tilstand. Rules from DCE tilstandsklasser. */
+function eqrToCategory(eqrValue) {
+  if (eqrValue == null || eqrValue === '' || Number.isNaN(eqrValue)) return null;
+  const n = typeof eqrValue === 'number' ? eqrValue : parseFloat(String(eqrValue).replace(',', '.'));
+  if (Number.isNaN(n)) return null;
+  if (n < 0.20) return { dvpiClass: 1, label: 'dårlig økologisk tilstand' };
+  if (n < 0.35) return { dvpiClass: 2, label: 'ringe økologisk tilstand' };
+  if (n < 0.50) return { dvpiClass: 3, label: 'moderat økologisk tilstand' };
+  if (n < 0.70) return { dvpiClass: 4, label: 'god økologisk tilstand' };
+  return { dvpiClass: 5, label: 'høj økologisk tilstand' };
+}
+
 function ResultsGrid({ results, totalRows, calculating }) {
   const handleDownload = () => {
-    const headers = ['Ark', 'DVPI', 'DK', 'EQR'];
-    const rows = results.map(r => [
-      r.sheet || '',
-      r.dvpi || '',
-      r.dk || '',
-      r.eqr || ''
-    ]);
+    const headers = ['Ark', 'DVPI', 'DK', 'EQR', 'Kategori', 'Tilstand'];
+    const rows = results.map(r => {
+      const eqr = r.error ? null : (r.eqr != null && r.eqr !== '' ? parseFloat(String(r.eqr).replace(',', '.')) : null);
+      const cat = eqrToCategory(eqr);
+      return [
+        r.sheet || '',
+        r.dvpi || '',
+        r.dk || '',
+        r.eqr || '',
+        cat ? cat.dvpiClass : '',
+        cat ? cat.label : ''
+      ];
+    });
     
     const csvContent = [
       headers.join(','),
@@ -56,17 +74,25 @@ function ResultsGrid({ results, totalRows, calculating }) {
               <th>DVPI</th>
               <th>DK</th>
               <th>EQR</th>
+              <th>Kategori</th>
+              <th>Tilstand</th>
             </tr>
           </thead>
           <tbody>
-            {results.map((result, index) => (
-              <tr key={index} className={result.error ? 'error-row' : ''}>
-                <td>{result.sheet || '(ukendt)'}</td>
-                <td>{result.error ? 'Fejl' : (result.dvpi || '-')}</td>
-                <td>{result.error ? '' : (result.dk || '-')}</td>
-                <td>{result.error ? '' : (result.eqr || '-')}</td>
-              </tr>
-            ))}
+            {results.map((result, index) => {
+              const eqr = result.error ? null : (result.eqr != null && result.eqr !== '' ? parseFloat(String(result.eqr).replace(',', '.')) : null);
+              const category = eqrToCategory(eqr);
+              return (
+                <tr key={index} className={result.error ? 'error-row' : ''}>
+                  <td>{result.sheet || '(ukendt)'}</td>
+                  <td>{result.error ? 'Fejl' : (result.dvpi || '-')}</td>
+                  <td>{result.error ? '' : (result.dk || '-')}</td>
+                  <td>{result.error ? '' : (result.eqr || '-')}</td>
+                  <td>{result.error ? '' : (category ? category.dvpiClass : '-')}</td>
+                  <td>{result.error ? '' : (category ? category.label : '-')}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {results.some(r => r.error) && (

@@ -78,3 +78,54 @@
 .error p {
   margin: 0;
 }
+
+.App-footer {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.App-footer-sales {
+  margin-bottom: 1.5rem;
+}
+
+.App-footer-sales p {
+  margin: 0 0 0.5rem 0;
+}
+
+.App-footer-sales p:last-child {
+  margin-bottom: 0;
+}
+
+.App-footer-dce {
+  margin: 0 0 0.75rem 0;
+  font-style: italic;
+}
+
+.App-footer-references p {
+  margin: 0 0 0.5rem 0;
+}
+
+.App-footer-ref-list {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+  list-style: disc;
+}
+
+.App-footer-ref-list li {
+  margin-bottom: 0.5rem;
+}
+
+.App-footer-ref-list a {
+  color: #c41e3a;
+  text-decoration: none;
+}
+
+.App-footer-ref-list a:hover {
+  text-decoration: underline;
+}

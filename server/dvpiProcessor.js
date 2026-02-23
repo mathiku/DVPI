@@ -80,6 +80,15 @@ function loadSpeciesCodes() {
   }
 }
 
+/** Returns Danish name for a Latin species name, or '' if not found. */
+function getDanishFromLatin(latin) {
+  if (!latin || !latin.trim()) return '';
+  loadSpeciesCodes();
+  const key = latin.trim().toLowerCase();
+  const found = speciesList.find(s => s.latin.toLowerCase() === key);
+  return found && found.danish ? found.danish : '';
+}
+
 /** Returns species matching query (min 3 chars). type=latin: kun LatinName, type=dansk: kun DanishName. */
 function searchSpecies(q, type) {
   loadSpeciesCodes();
@@ -92,6 +101,57 @@ function searchSpecies(q, type) {
     if (byDanish) return (s.danish || '').toLowerCase().includes(term);
     return s.latin.toLowerCase().includes(term) || (s.danish || '').toLowerCase().includes(term);
   }).slice(0, 100);
+}
+
+/** Convert raw CSV records to grid-shaped records (Transektundersøgelse, Kvadrat nummer, Art latin, Art dansk, Arts tom) and fill Art dansk from Latin when missing. */
+function rawRecordsToGridRecords(records) {
+  if (!records || records.length === 0) return [];
+  const headers = Object.keys(records[0] || {});
+  const findCol = (name) => headers.find(h => h.toLowerCase() === name.toLowerCase());
+  const colLatin = findCol('Art latin');
+  const colTran = findCol('Transektundersøgelse');
+  const colKv = findCol('Kvadrat nummer');
+  const colEmpty = findCol('Arts tom');
+  const colDanish = findCol('Art dansk') || findCol('Art');
+  if (!colLatin) return records.map(r => ({ Transektundersøgelse: '', Kvadrat nummer: '', 'Art latin': '', 'Art dansk': '', Arts tom: '' }));
+
+  const out = [];
+  for (const record of records) {
+    const val = (key) => (key ? (record[key] || '').trim() : '');
+    let latin = val(colLatin);
+    let danish = val(colDanish);
+    if (latin && !danish) danish = getDanishFromLatin(latin);
+    out.push({
+      'Transektundersøgelse': val(colTran),
+      'Kvadrat nummer': val(colKv),
+      'Art latin': latin,
+      'Art dansk': danish,
+      'Arts tom': val(colEmpty)
+    });
+  }
+  return out;
+}
+
+/** Sort grid records by Transektundersøgelse, Kvadrat nummer, Art latin (for display). */
+function sortGridRecords(records) {
+  if (!records || records.length === 0) return records;
+  const num = (v) => {
+    const n = parseFloat(String(v).trim());
+    return Number.isNaN(n) ? 0 : n;
+  };
+  return [...records].sort((a, b) => {
+    const tA = a['Transektundersøgelse'] ?? '';
+    const tB = b['Transektundersøgelse'] ?? '';
+    const cmpT = num(tA) - num(tB) || String(tA).localeCompare(String(tB));
+    if (cmpT !== 0) return cmpT;
+    const kA = a['Kvadrat nummer'] ?? '';
+    const kB = b['Kvadrat nummer'] ?? '';
+    const cmpK = num(kA) - num(kB) || String(kA).localeCompare(String(kB));
+    if (cmpK !== 0) return cmpK;
+    const lA = a['Art latin'] ?? '';
+    const lB = b['Art latin'] ?? '';
+    return lA.localeCompare(lB);
+  });
 }
 
 // Initialize on module load
@@ -427,5 +487,7 @@ module.exports = {
   processData,
   callDVPI,
   loadSpeciesCodes,
-  searchSpecies
+  searchSpecies,
+  rawRecordsToGridRecords,
+  sortGridRecords
 };

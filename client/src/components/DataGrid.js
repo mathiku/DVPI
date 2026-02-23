@@ -34,6 +34,28 @@ function ensureRecord(row) {
   return r;
 }
 
+/** Sort records by Transektundersøgelse, Kvadrat nummer, Art latin (chronological / findable order). */
+function sortRecordsForDisplay(records) {
+  if (!records || records.length === 0) return records;
+  const num = (v) => {
+    const n = parseFloat(String(v ?? '').trim());
+    return Number.isNaN(n) ? 0 : n;
+  };
+  return [...records].sort((a, b) => {
+    const tA = a['Transektundersøgelse'] ?? '';
+    const tB = b['Transektundersøgelse'] ?? '';
+    const cmpT = num(tA) - num(tB) || String(tA).localeCompare(String(tB));
+    if (cmpT !== 0) return cmpT;
+    const kA = a['Kvadrat nummer'] ?? '';
+    const kB = b['Kvadrat nummer'] ?? '';
+    const cmpK = num(kA) - num(kB) || String(kA).localeCompare(String(kB));
+    if (cmpK !== 0) return cmpK;
+    const lA = a['Art latin'] ?? '';
+    const lB = b['Art latin'] ?? '';
+    return lA.localeCompare(lB);
+  });
+}
+
 function escapeCsvField(val) {
   const s = String(val ?? '');
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -57,7 +79,8 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
 
   useEffect(() => {
     if (records && records.length > 0) {
-      setRows(records.map(r => ensureRecord(r)));
+      const sorted = sortRecordsForDisplay(records);
+      setRows(sorted.map(r => ensureRecord(r)));
     }
   }, [records]);
 
@@ -215,8 +238,10 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
+            {rows.map((row, rowIndex) => {
+              const isNewTransect = rowIndex > 0 && (row['Transektundersøgelse'] ?? '') !== (rows[rowIndex - 1]['Transektundersøgelse'] ?? '');
+              return (
+              <tr key={rowIndex} className={isNewTransect ? 'data-grid-row-new-transect' : ''}>
                 {columns.map(col => (
                   <td key={col}>
                     {renderCell(row, rowIndex, col)}
@@ -234,7 +259,8 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

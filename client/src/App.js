@@ -100,6 +100,22 @@ function App() {
           />
         )}
       </main>
+      <footer className="App-footer">
+        <section className="App-footer-sales">
+          <p>WSP udfører grødeundersøgelser med henblik på fastlæggelse af fremtidig grødeskæring i forbindelse med regulativrevision, men også generelle tilstandsvurderinger af vandplanter ved brug af DVPI-indekset. Ræk ud til @Alnøe, Anette Baisner for en uforpligtende snak.</p>
+          <p>Ved spørgsmål eller forslag til forbedring af beregnerens opsætning, kontakt @Nielsen, Martin Barsøe</p>
+        </section>
+        <section className="App-footer-references">
+          <p className="App-footer-dce">Denne side trækker på en tjeneste fremstillet af DCE – Nationalt Center for Miljø og Energi</p>
+          <p>Læs mere om beregneren og find øvrig information om Dansk Vandløbsplanteindeks:</p>
+          <ul className="App-footer-ref-list">
+            <li><strong>DVPI-beregneren:</strong> Larsen, S. E., Nielsen, D. N. og Erfurt, J. 2025. Ny og forbedret operationalisering af Dansk VandløbsPlante Indeks – Teknisk dokumentation. Aarhus Universitet, DCE – Nationalt Center for Miljø og Energi, 17 s. - Fagligt notat nr. 2025|43</li>
+            <li><strong>Dansk Vandløbsplanteindeks:</strong> Larsen, S.E. 2025. Dansk VandPlante Indeks (DVPI) - udvikling, anvendelse og begrænsninger. Aarhus Universitet, DCE – Nationalt Center for Miljø og Energi, 25 s. - Fagligt notat nr. 2025|32</li>
+            <li><strong>Tilstandsklasser (EQR):</strong> Larsen, S. E. og Baattrup-Pedersen, A. (2015). Matematisk beskrivelse af Dansk Vandløbsplante Indeks. Aarhus Universitet, DCE – Nationalt Center for Miljø og Energi, 14 s. – notat fra DCE - Nationalt Center for Miljø og Energi.{' '}<a href="http://dce.au.dk/fileadmin/dce.au.dk/Udgivelser/Notater_2015/Matematisk_beskrivelse_af_DVP.pdf" target="_blank" rel="noopener noreferrer">PDF</a></li>
+            <li><strong>Teknisk anvisning til feltarbejdet:</strong> Wiberg-Larsen, P. og Baattrup-Pedersen, A. (2017). &quot;Vandplanter&quot; i vandløb. Teknisk anvisning, TA. V17, Version 2.9, Institut for Ecoscience, Aarhus Universitet.{' '}<a href="https://ecos.au.dk/fileadmin/ecos/Fagdatacentre/Ferskvand/V17_Revision2_9.pdf" target="_blank" rel="noopener noreferrer">PDF</a></li>
+          </ul>
+        </section>
+      </footer>
     </div>
   );
 }

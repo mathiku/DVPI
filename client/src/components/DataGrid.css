@@ -113,6 +113,11 @@
   border-bottom: 1px solid #eee;
 }
 
+/* Mild transect grouping: 1.5× normal spacing above first row of each new transect */
+.data-grid-table tr.data-grid-row-new-transect td {
+  padding-top: 1.5em;
+}
+
 .data-grid-table input {
   width: 100%;
   min-width: 80px;

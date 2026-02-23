@@ -6,7 +6,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { parseCSV, processData, callDVPI, searchSpecies } = require('./dvpiProcessor');
+const { parseCSV, processData, callDVPI, searchSpecies, rawRecordsToGridRecords, sortGridRecords } = require('./dvpiProcessor');
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -110,10 +110,13 @@ async function processCSVFile(filePath) {
     }
   }
   
+  const gridRecords = rawRecordsToGridRecords(data);
+  const rawRecords = sortGridRecords(gridRecords);
+
   return {
     results,
     totalRows: processedData.totalRows,
-    rawRecords: data
+    rawRecords
   };
 }
 
