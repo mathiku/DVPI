@@ -49,11 +49,11 @@ function loadSpeciesCodes() {
     
     for (const record of records) {
       if (isSimpleFormat) {
-        // stancodesimple.csv: kolonner danish, latin, stancode (små bogstaver; fjern BOM fra første kolonnenavn)
+        // stancodesimple.csv: kolonner stancode, latin, danish (små bogstaver; fjern BOM fra første kolonnenavn)
         const raw = record;
-        const code = (raw.stancode || '').toString().trim();
-        const latin = (raw.latin || raw.LatinName || '').trim();
-        let danish = (raw.danish || raw.DanishName || raw['\uFEFFdanish'] || '').trim();
+        const code = String(raw['\uFEFFstancode'] ?? raw.stancode ?? '').trim();
+        const latin = String(raw.latin ?? raw.LatinName ?? '').trim();
+        let danish = String(raw.danish ?? raw.DanishName ?? raw['\uFEFFdanish'] ?? '').trim();
         if (danish === '-') danish = '';
         if (code && latin) {
           latinToCode.set(latin.toLowerCase(), code);
@@ -82,11 +82,12 @@ function loadSpeciesCodes() {
 
 /** Returns Danish name for a Latin species name, or '' if not found. */
 function getDanishFromLatin(latin) {
-  if (!latin || !latin.trim()) return '';
+  const s = typeof latin === 'string' ? latin : String(latin ?? '');
+  if (!s.trim()) return '';
   loadSpeciesCodes();
-  const key = latin.trim().toLowerCase();
-  const found = speciesList.find(s => s.latin.toLowerCase() === key);
-  return found && found.danish ? found.danish : '';
+  const key = s.trim().toLowerCase();
+  const found = speciesList.find(s2 => String(s2.latin ?? '').toLowerCase() === key);
+  return found && found.danish ? String(found.danish) : '';
 }
 
 /** Returns species matching query (min 3 chars). type=latin: kun LatinName, type=dansk: kun DanishName. */
@@ -97,9 +98,11 @@ function searchSpecies(q, type) {
   const byLatin = type === 'latin';
   const byDanish = type === 'dansk';
   return speciesList.filter(s => {
-    if (byLatin) return s.latin.toLowerCase().includes(term);
-    if (byDanish) return (s.danish || '').toLowerCase().includes(term);
-    return s.latin.toLowerCase().includes(term) || (s.danish || '').toLowerCase().includes(term);
+    const lat = String(s.latin ?? '');
+    const dan = String(s.danish ?? '');
+    if (byLatin) return lat.toLowerCase().includes(term);
+    if (byDanish) return dan.toLowerCase().includes(term);
+    return lat.toLowerCase().includes(term) || dan.toLowerCase().includes(term);
   }).slice(0, 100);
 }
 
@@ -113,11 +116,11 @@ function rawRecordsToGridRecords(records) {
   const colKv = findCol('Kvadrat nummer');
   const colEmpty = findCol('Arts tom');
   const colDanish = findCol('Art dansk') || findCol('Art');
-  if (!colLatin) return records.map(r => ({ Transektundersøgelse: '', Kvadrat nummer: '', 'Art latin': '', 'Art dansk': '', Arts tom: '' }));
+  if (!colLatin) return records.map(r => ({ 'Transektundersøgelse': '', 'Kvadrat nummer': '', 'Art latin': '', 'Art dansk': '', 'Arts tom': '' }));
 
   const out = [];
   for (const record of records) {
-    const val = (key) => (key ? (record[key] || '').trim() : '');
+    const val = (key) => (key ? String(record[key] ?? '').trim() : '');
     let latin = val(colLatin);
     let danish = val(colDanish);
     if (latin && !danish) danish = getDanishFromLatin(latin);
