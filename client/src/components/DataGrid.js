@@ -239,9 +239,12 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => {
-              const isNewTransect = rowIndex > 0 && (row['Transektundersøgelse'] ?? '') !== (rows[rowIndex - 1]['Transektundersøgelse'] ?? '');
+              const prev = rowIndex > 0 ? rows[rowIndex - 1] : null;
+              const isNewTransect = prev !== null && (row['Transektundersøgelse'] ?? '') !== (prev['Transektundersøgelse'] ?? '');
+              const isNewKvadrat = prev !== null && (row['Kvadrat nummer'] ?? '') !== (prev['Kvadrat nummer'] ?? '');
+              const rowClass = isNewTransect ? 'data-grid-row-new-transect' : (isNewKvadrat ? 'data-grid-row-new-kvadrat' : '');
               return (
-              <tr key={rowIndex} className={isNewTransect ? 'data-grid-row-new-transect' : ''}>
+              <tr key={rowIndex} className={rowClass}>
                 {columns.map(col => (
                   <td key={col}>
                     {renderCell(row, rowIndex, col)}

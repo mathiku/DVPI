@@ -8,6 +8,8 @@ import DataGrid from './components/DataGrid';
 function App() {
   const [results, setResults] = useState(null);
   const [rawRecords, setRawRecords] = useState(null);
+  const [stedID, setStedID] = useState(null);
+  const [stedtekst, setStedtekst] = useState(null);
   const [loading, setLoading] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [error, setError] = useState(null);
@@ -16,6 +18,8 @@ function App() {
   const handleFileProcessed = (data) => {
     setResults(data);
     setRawRecords(data.rawRecords || null);
+    setStedID(data.stedID ?? null);
+    setStedtekst(data.stedtekst ?? null);
     setGridOpen(true);
     setError(null);
   };
@@ -24,10 +28,24 @@ function App() {
     setError(err);
     setResults(null);
     setRawRecords(null);
+    setStedID(null);
+    setStedtekst(null);
   };
 
   const handleLoading = (isLoading) => {
     setLoading(isLoading);
+  };
+
+  const handleDownloadTemplate = () => {
+    const header = 'Transektundersøgelse;Kvadrat nummer;Art dansk;Art latin;Arts tom';
+    const csv = '\uFEFF' + header + '\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'WSP-DVPIberegner - skabelon.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleRecalculate = async (rows) => {
@@ -66,6 +84,8 @@ function App() {
             results={results.results}
             totalRows={results.totalRows}
             calculating={loading || recalculating}
+            stedID={stedID}
+            stedtekst={stedtekst}
           />
         )}
         <FileUpload
@@ -73,6 +93,13 @@ function App() {
           onError={handleError}
           onLoading={handleLoading}
         />
+        <button
+          type="button"
+          className="template-download-button"
+          onClick={handleDownloadTemplate}
+        >
+          Hent skabelon
+        </button>
         {!showGrid && (
           <button
             type="button"

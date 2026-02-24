@@ -113,10 +113,25 @@ async function processCSVFile(filePath) {
   const gridRecords = rawRecordsToGridRecords(data);
   const rawRecords = sortGridRecords(gridRecords);
 
+  let stedID = '';
+  let stedtekst = '';
+  if (data && data.length > 0) {
+    const first = data[0];
+    const headers = Object.keys(first);
+    const colStedID = headers.find(h => h.toLowerCase().replace(/\s/g, '') === 'stedid');
+    const colStedtekst = headers.find(h => h.toLowerCase().replace(/\s/g, '') === 'stedtekst');
+    if (colStedID && first[colStedID] != null) stedID = String(first[colStedID]).trim();
+    if (colStedtekst && first[colStedtekst] != null) stedtekst = String(first[colStedtekst]).trim();
+  }
+  const sheetLabel = (stedID && stedtekst) ? `${stedID} - ${stedtekst}` : (stedtekst || '(pasted)');
+  if (results.length > 0) results[0].sheet = sheetLabel;
+
   return {
     results,
     totalRows: processedData.totalRows,
-    rawRecords
+    rawRecords,
+    stedID,
+    stedtekst
   };
 }
 

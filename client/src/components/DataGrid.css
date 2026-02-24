@@ -118,6 +118,11 @@
   padding-top: 1.5em;
 }
 
+/* Kvadrat grouping: 1.25× spacing when kvadrat changes (same transect) */
+.data-grid-table tr.data-grid-row-new-kvadrat td {
+  padding-top: 1.25em;
+}
+
 .data-grid-table input {
   width: 100%;
   min-width: 80px;

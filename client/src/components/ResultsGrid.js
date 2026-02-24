@@ -13,37 +13,40 @@ function eqrToCategory(eqrValue) {
   return { dvpiClass: 5, label: 'høj økologisk tilstand' };
 }
 
-function ResultsGrid({ results, totalRows, calculating }) {
+function ResultsGrid({ results, totalRows, calculating, stedID, stedtekst }) {
   const handleDownload = () => {
-    const headers = ['Ark', 'DVPI', 'DK', 'EQR', 'Kategori', 'Tilstand'];
+    const headers = ['Ark', 'EQR', 'Kategori', 'Tilstand'];
     const rows = results.map(r => {
       const eqr = r.error ? null : (r.eqr != null && r.eqr !== '' ? parseFloat(String(r.eqr).replace(',', '.')) : null);
       const cat = eqrToCategory(eqr);
       return [
         r.sheet || '',
-        r.dvpi || '',
-        r.dk || '',
         r.eqr || '',
         cat ? cat.dvpiClass : '',
         cat ? cat.label : ''
       ];
     });
-    
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
-    
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const safe = (s) => String(s ?? '').replace(/[/\\:*?"<>|]/g, '-').trim() || '';
+    const hasPlace = stedID != null && stedtekst != null && (String(stedID).trim() || String(stedtekst).trim());
+    const baseName = hasPlace ? `WSP DVPIberegner - ${safe(stedID)} - ${safe(stedtekst)}` : 'WSP DVPIberegner - manuelt indtastet';
+    const filename = `${baseName}.csv`;
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `dvpi_resultater_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!results || results.length === 0) {
@@ -71,8 +74,6 @@ function ResultsGrid({ results, totalRows, calculating }) {
           <thead>
             <tr>
               <th>Ark</th>
-              <th>DVPI</th>
-              <th>DK</th>
               <th>EQR</th>
               <th>Kategori</th>
               <th>Tilstand</th>
@@ -85,8 +86,6 @@ function ResultsGrid({ results, totalRows, calculating }) {
               return (
                 <tr key={index} className={result.error ? 'error-row' : ''}>
                   <td>{result.sheet || '(ukendt)'}</td>
-                  <td>{result.error ? 'Fejl' : (result.dvpi || '-')}</td>
-                  <td>{result.error ? '' : (result.dk || '-')}</td>
                   <td>{result.error ? '' : (result.eqr || '-')}</td>
                   <td>{result.error ? '' : (category ? category.dvpiClass : '-')}</td>
                   <td>{result.error ? '' : (category ? category.label : '-')}</td>

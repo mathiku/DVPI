@@ -59,6 +59,22 @@
   background-color: #a01930;
 }
 
+.template-download-button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  background-color: #e9ecef;
+  color: #333;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.template-download-button:hover {
+  background-color: #dee2e6;
+}
+
 .loading {
   text-align: center;
   padding: 2rem;
