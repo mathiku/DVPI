@@ -98,12 +98,13 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
         onRecordsChange?.(next);
         const transekt = (row['Transektundersøgelse'] ?? '').trim();
         const kvadrat = (row['Kvadrat nummer'] ?? '').trim();
-        const othersInQuadrat = next.filter(
-          (r, i) => i !== rowIndex &&
-            (String(r['Transektundersøgelse'] ?? '').trim() === transekt) &&
-            (String(r['Kvadrat nummer'] ?? '').trim() === kvadrat &&
-            ((r['Art latin'] ?? '').trim() || (r['Art dansk'] ?? '').trim())
-        );
+        const othersInQuadrat = next.filter((r, i) => {
+          if (i === rowIndex) return false;
+          const sameT = (String(r['Transektundersøgelse'] ?? '').trim() === transekt);
+          const sameK = (String(r['Kvadrat nummer'] ?? '').trim() === kvadrat);
+          const hasSpecies = !!((r['Art latin'] ?? '').trim() || (r['Art dansk'] ?? '').trim());
+          return sameT && sameK && hasSpecies;
+        });
         if (othersInQuadrat.length > 0) {
           setArtstomModal({ transekt, kvadrat });
         }
