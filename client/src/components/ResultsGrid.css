@@ -74,6 +74,22 @@
   border-bottom: 2px solid #dee2e6;
 }
 
+.results-table-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.results-table-sortable:hover {
+  background-color: #e9ecef;
+}
+
+.results-table-sort-icon {
+  margin-left: 0.25rem;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
 .results-table td {
   padding: 0.75rem;
   border-bottom: 1px solid #dee2e6;

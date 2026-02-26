@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import './DataGrid.css';
 import SpeciesSelect from './SpeciesSelect';
 
@@ -16,7 +16,7 @@ const COLUMN_LABELS = {
   'Kvadrat nummer': 'Kvadratnr.',
   'Art dansk': 'Art',
   'Art latin': 'Videnskabeligt navn',
-  'Arts tom': 'Uden art'
+  'Arts tom': 'Artstom'
 };
 
 const SPECIES_DISABLED_VALUES = ['ja', 'yes', 'true', '1'];
@@ -84,6 +84,8 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
     }
   }, [records]);
 
+  const [artstomModal, setArtstomModal] = useState(null); // { transekt, kvadrat } when asking to clear whole quadrat
+
   const updateCell = useCallback((rowIndex, col, value) => {
     setRows(prev => {
       let next = prev.map((r, i) =>
@@ -93,11 +95,55 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
       if (col === 'Arts tom' && isArtsTomTrue(value)) {
         row['Art latin'] = '';
         row['Art dansk'] = '';
+        onRecordsChange?.(next);
+        const transekt = (row['Transektundersøgelse'] ?? '').trim();
+        const kvadrat = (row['Kvadrat nummer'] ?? '').trim();
+        const othersInQuadrat = next.filter(
+          (r, i) => i !== rowIndex &&
+            (String(r['Transektundersøgelse'] ?? '').trim() === transekt) &&
+            (String(r['Kvadrat nummer'] ?? '').trim() === kvadrat &&
+            ((r['Art latin'] ?? '').trim() || (r['Art dansk'] ?? '').trim())
+        );
+        if (othersInQuadrat.length > 0) {
+          setArtstomModal({ transekt, kvadrat });
+        }
+        return next;
       }
       onRecordsChange?.(next);
       return next;
     });
   }, [onRecordsChange]);
+
+  const confirmClearQuadrat = useCallback((doClearQuadrat) => {
+    if (!artstomModal) return;
+    const { transekt, kvadrat } = artstomModal;
+    if (doClearQuadrat) {
+      setRows(prev => {
+        let keptArtstomInQuadrat = false;
+        const next = prev.filter(r => {
+          const sameQuadrat =
+            (String(r['Transektundersøgelse'] ?? '').trim() === transekt) &&
+            (String(r['Kvadrat nummer'] ?? '').trim() === kvadrat;
+          if (!sameQuadrat) return true;
+          const hasSpecies = !!((r['Art latin'] ?? '').trim() || (r['Art dansk'] ?? '').trim());
+          const isArtstom = isArtsTomTrue(r['Arts tom']);
+          if (hasSpecies) return false;
+          if (isArtstom) {
+            if (keptArtstomInQuadrat) return false;
+            keptArtstomInQuadrat = true;
+            return true;
+          }
+          return true;
+        });
+        if (next.length === 0) next.push(ensureRecord({ 'Transektundersøgelse': transekt, 'Kvadrat nummer': kvadrat, 'Arts tom': 'Ja' }));
+        onRecordsChange?.(next);
+        return next;
+      });
+    }
+    setArtstomModal(null);
+  }, [artstomModal, onRecordsChange]);
+
+  const closeArtstomModal = useCallback(() => setArtstomModal(null), []);
 
   const updateSpecies = useCallback((rowIndex, payload) => {
     setRows(prev => {
@@ -148,6 +194,52 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
 
   const columns = DEFAULT_COLUMNS;
 
+  const [sortCol, setSortCol] = useState(null);
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const { displayRows, displayToRowIndex } = useMemo(() => {
+    const num = (v) => {
+      const n = parseFloat(String(v ?? '').trim());
+      return Number.isNaN(n) ? 0 : n;
+    };
+    if (!sortCol) {
+      return {
+        displayRows: rows,
+        displayToRowIndex: rows.map((_, i) => i)
+      };
+    }
+    const col = sortCol;
+    const asc = sortAsc;
+    const indexed = rows.map((row, i) => ({ row, i }));
+    indexed.sort((a, b) => {
+      let va = a.row[col] ?? '';
+      let vb = b.row[col] ?? '';
+      if (col === 'Transektundersøgelse' || col === 'Kvadrat nummer') {
+        const cmp = num(va) - num(vb);
+        if (cmp !== 0) return asc ? cmp : -cmp;
+        return asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      }
+      if (col === 'Arts tom') {
+        const ta = isArtsTomTrue(va) ? 1 : 0;
+        const tb = isArtsTomTrue(vb) ? 1 : 0;
+        return asc ? ta - tb : tb - ta;
+      }
+      va = String(va);
+      vb = String(vb);
+      const cmp = va.localeCompare(vb, 'da');
+      return asc ? cmp : -cmp;
+    });
+    return {
+      displayRows: indexed.map(x => x.row),
+      displayToRowIndex: indexed.map(x => x.i)
+    };
+  }, [rows, sortCol, sortAsc]);
+
+  const handleSort = useCallback((col) => {
+    setSortCol(prev => (prev === col ? prev : col));
+    setSortAsc(prev => (sortCol === col ? !prev : true));
+  }, [sortCol]);
+
   const renderCell = (row, rowIndex, col) => {
     const disabledSpecies = isArtsTomTrue(row['Arts tom']);
     const value = row[col] ?? '';
@@ -161,8 +253,8 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
             checked={checked}
             onChange={e => updateCell(rowIndex, col, e.target.checked ? 'Ja' : 'Nej')}
             className="data-grid-checkbox"
+            aria-label={checked ? 'Artstom (Ja)' : 'Artstom (Nej)'}
           />
-          <span className="data-grid-checkbox-label">{checked ? 'Ja' : 'Nej'}</span>
         </label>
       );
     }
@@ -200,11 +292,30 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
 
   return (
     <div className="data-grid-container">
+      {artstomModal != null && (
+        <div className="data-grid-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="artstom-modal-title">
+          <div className="data-grid-modal">
+            <h3 id="artstom-modal-title">Artstom</h3>
+            <p>Vil du rydde hele kvadratet? De andre rækker med arter i dette kvadrat fjernes, så kun én artstom linje står tilbage.</p>
+            <div className="data-grid-modal-actions">
+              <button type="button" className="btn-modal-primary" onClick={() => confirmClearQuadrat(true)}>
+                Ryd hele kvadratet
+              </button>
+              <button type="button" className="btn-modal-secondary" onClick={() => confirmClearQuadrat(false)}>
+                Kun denne linje
+              </button>
+              <button type="button" className="btn-modal-cancel" onClick={closeArtstomModal}>
+                Annuller
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="data-grid-header">
         <h2>Indtastningsdata</h2>
         <p className="data-grid-hint">
           Rediger tabellen nedenfor. Tilføj rækker til manuel indtastning, eller brug data fra en CSV.
-          Når &quot;Uden art&quot; er afkrydset, tømmes og deaktiveres art-felterne.
+          Når &quot;Artstom&quot; er afkrydset, kan du rydde alle arter i kvadratet (bekræft i dialogen).
           Skriv mindst 3 tegn i Videnskabeligt navn eller Art for at søge; valg opdaterer begge.
         </p>
         <div className="data-grid-actions">
@@ -232,14 +343,22 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           <thead>
             <tr>
               {columns.map(col => (
-                <th key={col}>{COLUMN_LABELS[col] ?? col}</th>
+                <th
+                  key={col}
+                  className="data-grid-table-sortable"
+                  onClick={() => handleSort(col)}
+                >
+                  {COLUMN_LABELS[col] ?? col}
+                  {sortCol === col && <span className="data-grid-table-sort-icon" aria-hidden="true">{sortAsc ? ' ↑' : ' ↓'}</span>}
+                </th>
               ))}
               <th className="col-actions" aria-label="Fjern række"></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => {
-              const prev = rowIndex > 0 ? rows[rowIndex - 1] : null;
+            {displayRows.map((row, displayIndex) => {
+              const rowIndex = displayToRowIndex[displayIndex];
+              const prev = displayIndex > 0 ? displayRows[displayIndex - 1] : null;
               const isNewTransect = prev !== null && (row['Transektundersøgelse'] ?? '') !== (prev['Transektundersøgelse'] ?? '');
               const isNewKvadrat = prev !== null && (row['Kvadrat nummer'] ?? '') !== (prev['Kvadrat nummer'] ?? '');
               const rowClass = isNewTransect ? 'data-grid-row-new-transect' : (isNewKvadrat ? 'data-grid-row-new-kvadrat' : '');

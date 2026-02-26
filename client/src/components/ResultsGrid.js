@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import './ResultsGrid.css';
 
 /** EQR to DVPI class (1-5) and Danish tilstand. Rules from DCE tilstandsklasser. */
@@ -13,10 +13,64 @@ function eqrToCategory(eqrValue) {
   return { dvpiClass: 5, label: 'høj økologisk tilstand' };
 }
 
+const RESULT_HEADERS = [
+  { key: 'sheet', label: 'Ark' },
+  { key: 'eqr', label: 'EQR' },
+  { key: 'dvpi', label: 'DVPI-værdi' },
+  { key: 'tilstand', label: 'Tilstand' }
+];
+
 function ResultsGrid({ results, totalRows, calculating, stedID, stedtekst }) {
+  const [sortKey, setSortKey] = useState('sheet');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sortedResults = useMemo(() => {
+    if (!results || results.length === 0) return results;
+    const key = sortKey;
+    const asc = sortAsc;
+    return [...results].sort((a, b) => {
+      let va = a[key];
+      let vb = b[key];
+      if (key === 'eqr') {
+        va = va != null && va !== '' ? parseFloat(String(va).replace(',', '.')) : null;
+        vb = vb != null && vb !== '' ? parseFloat(String(vb).replace(',', '.')) : null;
+        if (va == null && vb == null) return 0;
+        if (va == null) return asc ? 1 : -1;
+        if (vb == null) return asc ? -1 : 1;
+        return asc ? va - vb : vb - va;
+      }
+      if (key === 'dvpi') {
+        const eqrA = a.eqr != null && a.eqr !== '' ? parseFloat(String(a.eqr).replace(',', '.')) : null;
+        const eqrB = b.eqr != null && b.eqr !== '' ? parseFloat(String(b.eqr).replace(',', '.')) : null;
+        const catA = eqrToCategory(eqrA);
+        const catB = eqrToCategory(eqrB);
+        va = catA ? catA.dvpiClass : '';
+        vb = catB ? catB.dvpiClass : '';
+        if (va === vb) return 0;
+        return asc ? (va - vb) : (vb - va);
+      }
+      if (key === 'tilstand') {
+        const eqrA = a.eqr != null && a.eqr !== '' ? parseFloat(String(a.eqr).replace(',', '.')) : null;
+        const eqrB = b.eqr != null && b.eqr !== '' ? parseFloat(String(b.eqr).replace(',', '.')) : null;
+        va = (eqrToCategory(eqrA) || {}).label || '';
+        vb = (eqrToCategory(eqrB) || {}).label || '';
+      }
+      va = String(va ?? '');
+      vb = String(vb ?? '');
+      const cmp = va.localeCompare(vb, 'da');
+      return asc ? cmp : -cmp;
+    });
+  }, [results, sortKey, sortAsc]);
+
+  const handleSort = (key) => {
+    if (sortKey === key) setSortAsc(prev => !prev);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
   const handleDownload = () => {
-    const headers = ['Ark', 'EQR', 'Kategori', 'Tilstand'];
-    const rows = results.map(r => {
+    const headers = ['Ark', 'EQR', 'DVPI-værdi', 'Tilstand'];
+    const source = sortedResults || results || [];
+    const rows = source.map(r => {
       const eqr = r.error ? null : (r.eqr != null && r.eqr !== '' ? parseFloat(String(r.eqr).replace(',', '.')) : null);
       const cat = eqrToCategory(eqr);
       return [
@@ -73,14 +127,16 @@ function ResultsGrid({ results, totalRows, calculating, stedID, stedtekst }) {
         <table className="results-table">
           <thead>
             <tr>
-              <th>Ark</th>
-              <th>EQR</th>
-              <th>Kategori</th>
-              <th>Tilstand</th>
+              {RESULT_HEADERS.map(({ key, label }) => (
+                <th key={key} className="results-table-sortable" onClick={() => handleSort(key)}>
+                  {label}
+                  {sortKey === key && <span className="results-table-sort-icon" aria-hidden="true">{sortAsc ? ' ↑' : ' ↓'}</span>}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {results.map((result, index) => {
+            {(sortedResults || results || []).map((result, index) => {
               const eqr = result.error ? null : (result.eqr != null && result.eqr !== '' ? parseFloat(String(result.eqr).replace(',', '.')) : null);
               const category = eqrToCategory(eqr);
               return (

@@ -41,6 +41,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Template download: serve xlsx from input folder
+const templatePath = path.join(__dirname, '..', 'input', 'Skabelon til DVPI beregner_WSP.xlsx');
+app.get('/api/template', (req, res) => {
+  if (!fs.existsSync(templatePath)) {
+    return res.status(404).json({ error: 'Skabelonfil ikke fundet' });
+  }
+  res.download(templatePath, 'Skabelon til DVPI beregner_WSP.xlsx', (err) => {
+    if (err && !res.headersSent) res.status(500).json({ error: err.message });
+  });
+});
+
 // Species search for grid dropdowns (min 3 chars). type=latin søger kun LatinName, type=dansk kun DanishName.
 app.get('/api/species', (req, res) => {
   const q = (req.query.q || '').trim();
@@ -118,8 +129,9 @@ async function processCSVFile(filePath) {
   if (data && data.length > 0) {
     const first = data[0];
     const headers = Object.keys(first);
-    const colStedID = headers.find(h => h.toLowerCase().replace(/\s/g, '') === 'stedid');
-    const colStedtekst = headers.find(h => h.toLowerCase().replace(/\s/g, '') === 'stedtekst');
+    const norm = (h) => h.toLowerCase().replace(/\s/g, '');
+    const colStedID = headers.find(h => norm(h) === 'stedid') || headers.find(h => norm(h) === 'stationsnummer');
+    const colStedtekst = headers.find(h => norm(h) === 'stedtekst') || headers.find(h => norm(h) === 'stednavn') || headers.find(h => norm(h) === 'navn');
     if (colStedID && first[colStedID] != null) stedID = String(first[colStedID]).trim();
     if (colStedtekst && first[colStedtekst] != null) stedtekst = String(first[colStedtekst]).trim();
   }
