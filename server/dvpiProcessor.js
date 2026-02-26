@@ -111,11 +111,12 @@ function rawRecordsToGridRecords(records) {
   if (!records || records.length === 0) return [];
   const headers = Object.keys(records[0] || {});
   const findCol = (name) => headers.find(h => h.toLowerCase() === name.toLowerCase());
-  const colLatin = findCol('Art latin');
-  const colTran = findCol('Transektundersøgelse');
-  const colKv = findCol('Kvadrat nummer');
+  const findColAny = (...names) => { for (const n of names) { const c = findCol(n); if (c) return c; } return undefined; };
+  const colLatin = findColAny('Art latin', 'Art');
+  const colTran = findColAny('Transektundersøgelse', 'Transektnr');
+  const colKv = findColAny('Kvadrat nummer', 'Kvadratnr');
   const colEmpty = findCol('Arts tom');
-  const colDanish = findCol('Art dansk') || findCol('Art');
+  const colDanish = findCol('Art dansk');
   if (!colLatin) return records.map(r => ({ 'Transektundersøgelse': '', 'Kvadrat nummer': '', 'Art latin': '', 'Art dansk': '', 'Arts tom': '' }));
 
   const out = [];
@@ -252,30 +253,34 @@ function processData(records) {
   console.log(`processData: checking ${headers.length} headers for Danish format`);
   console.log(`processData: all headers=[${headers.join(', ')}]`);
   
-  const hasDanishHeader = headers.some(h => 
-    h.toLowerCase().includes('art latin') || 
+  const norm = (h) => h.toLowerCase().replace(/\s/g, '');
+  const hasDanishHeader = headers.some(h =>
+    h.toLowerCase().includes('art latin') ||
     h.toLowerCase().includes('dækningsgrad') ||
     h.toLowerCase().includes('arts tom')
   );
+  // Also accept new xlsx template format (Stationsnummer, Navn, Transektnr, Kvadratnr, Art)
+  const hasTemplateHeader = !hasDanishHeader && headers.some(h => norm(h) === 'transektnr') && headers.some(h => norm(h) === 'art');
   
   console.log(`processData: hasDanishHeader=${hasDanishHeader}`);
   
-  if (!hasDanishHeader) {
+  if (!hasDanishHeader && !hasTemplateHeader) {
     throw new Error('CSV does not appear to have Danish vegetation data format');
   }
-  
-  // Find column indices
+
+  // Find column indices (support both original VANDA names and new xlsx template names)
   const findColumn = (name) => {
     const idx = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
     console.log(`processData: findColumn("${name}") = ${idx >= 0 ? idx : 'NOT FOUND'}`);
     return idx;
   };
-  
-  const idxLatin = findColumn('Art latin');
+  const findColumnAny = (...names) => { for (const n of names) { const idx = findColumn(n); if (idx >= 0) return idx; } return -1; };
+
+  const idxLatin = findColumnAny('Art latin', 'Art');
   const idxCover = findColumn('Dækningsgrad');
   const idxEmpty = findColumn('Arts tom');
-  const idxTran = findColumn('Transektundersøgelse');
-  const idxKv = findColumn('Kvadrat nummer');
+  const idxTran = findColumnAny('Transektundersøgelse', 'Transektnr');
+  const idxKv = findColumnAny('Kvadrat nummer', 'Kvadratnr');
   
   if (idxLatin < 0) {
     throw new Error('Missing required column: Art latin (Videnskabeligt navn)');

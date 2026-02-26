@@ -197,21 +197,31 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
 
   const [sortCol, setSortCol] = useState(null);
   const [sortAsc, setSortAsc] = useState(true);
+  const [speciesFilter, setSpeciesFilter] = useState('');
 
   const { displayRows, displayToRowIndex } = useMemo(() => {
     const num = (v) => {
       const n = parseFloat(String(v ?? '').trim());
       return Number.isNaN(n) ? 0 : n;
     };
+    // Apply species filter
+    const filterTerm = speciesFilter.trim().toLowerCase();
+    let indexed = rows.map((row, i) => ({ row, i }));
+    if (filterTerm) {
+      indexed = indexed.filter(({ row }) => {
+        const latin = String(row['Art latin'] ?? '').toLowerCase();
+        const danish = String(row['Art dansk'] ?? '').toLowerCase();
+        return latin.includes(filterTerm) || danish.includes(filterTerm);
+      });
+    }
     if (!sortCol) {
       return {
-        displayRows: rows,
-        displayToRowIndex: rows.map((_, i) => i)
+        displayRows: indexed.map(x => x.row),
+        displayToRowIndex: indexed.map(x => x.i)
       };
     }
     const col = sortCol;
     const asc = sortAsc;
-    const indexed = rows.map((row, i) => ({ row, i }));
     indexed.sort((a, b) => {
       let va = a.row[col] ?? '';
       let vb = b.row[col] ?? '';
@@ -234,7 +244,7 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
       displayRows: indexed.map(x => x.row),
       displayToRowIndex: indexed.map(x => x.i)
     };
-  }, [rows, sortCol, sortAsc]);
+  }, [rows, sortCol, sortAsc, speciesFilter]);
 
   const handleSort = useCallback((col) => {
     setSortCol(prev => (prev === col ? prev : col));
@@ -320,6 +330,13 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
           Skriv mindst 3 tegn i Videnskabeligt navn eller Art for at søge; valg opdaterer begge.
         </p>
         <div className="data-grid-actions">
+          <input
+            type="text"
+            className="data-grid-filter"
+            placeholder="Filtrer art / videnskabeligt navn…"
+            value={speciesFilter}
+            onChange={e => setSpeciesFilter(e.target.value)}
+          />
           <button type="button" className="btn-add-row" onClick={addRow}>
             + Tilføj række
           </button>
