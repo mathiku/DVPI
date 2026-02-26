@@ -122,11 +122,11 @@ function DataGrid({ records = [], onRecordsChange, onCalculate, calculating }) {
       setRows(prev => {
         let keptArtstomInQuadrat = false;
         const next = prev.filter(r => {
-          const sameQuadrat =
-            (String(r['Transektundersøgelse'] ?? '').trim() === transekt) &&
-            (String(r['Kvadrat nummer'] ?? '').trim() === kvadrat;
+          const rT = String(r['Transektundersøgelse'] || '').trim();
+          const rK = String(r['Kvadrat nummer'] || '').trim();
+          const sameQuadrat = (rT === transekt && rK === kvadrat);
           if (!sameQuadrat) return true;
-          const hasSpecies = !!((r['Art latin'] ?? '').trim() || (r['Art dansk'] ?? '').trim());
+          const hasSpecies = !!((r['Art latin'] || '').trim() || (r['Art dansk'] || '').trim());
           const isArtstom = isArtsTomTrue(r['Arts tom']);
           if (hasSpecies) return false;
           if (isArtstom) {
