@@ -59,7 +59,7 @@ function App() {
       const response = await axios.post('/api/process-json', { records: trimmedRecords });
       setResults(response.data);
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      setError(err.response?.data?.error || 'Der opstod en fejl ved beregningen. Prøv venligst igen.');
     } finally {
       setRecalculating(false);
     }
@@ -106,6 +106,14 @@ function App() {
               Åbn tabel til manuel indtastning
             </button>
           )}
+          <div className="vejledning">
+            <h3>Vejledning</h3>
+            <ul>
+              <li>Med knappen "Hent skabelon" kan en excel-skabelon hentes, til indtastning af transekter med kvadrater og plantefund.</li>
+              <li>Det er også muligt at indtaste direkte i tabellen på siden, f.eks. hvis man ønsker at undersøge hvilken EQR-værdi, beregneren tildeler de enkelte arter.</li>
+              <li>For at beregne den økologiske tilstand i en eksisterende DVPI-undersøgelse, kan CSV-filer hentes direkte fra kemidata.dk, og slippes i ovenstående felt hvorefter den økologiske tilstand angives.</li>
+            </ul>
+          </div>
           {loading && (
             <div className="loading">
               <p>Behandler fil og beregner DVPI-værdier…</p>
@@ -126,8 +134,8 @@ function App() {
         </main>
         <aside className="App-sidebar">
           <section className="App-footer-sales">
-            <p>WSP udfører grødeundersøgelser med henblik på fastlæggelse af fremtidig grødeskæring i forbindelse med regulativrevision, men også generelle tilstandsvurderinger af vandplanter ved brug af DVPI-indekset. Ræk ud til @Alnøe, Anette Baisner for en uforpligtende snak.</p>
-            <p>Ved spørgsmål eller forslag til forbedring af beregnerens opsætning, kontakt @Nielsen, Martin Barsøe</p>
+            <p>WSP udfører vandplanteundersøgelser med henblik på fastlæggelse af fremtidig grødeskæring i forbindelse med regulativrevision, men også generelle tilstandsvurderinger af vandplanter ved brug af DVPI-indekset. Ræk ud til <a href="mailto:anette.alnoe@wsp.com">Anette Baisner</a> for en uforpligtende snak.</p>
+            <p>Ved spørgsmål eller forslag til forbedring af beregnerens opsætning, kontakt <a href="mailto:martin.nielsen@wsp.com">Martin Barsøe</a></p>
           </section>
           <section className="App-footer-references">
             <p className="App-footer-dce">Denne side trækker på en tjeneste fremstillet af DCE – Nationalt Center for Miljø og Energi</p>

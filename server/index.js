@@ -20,7 +20,6 @@ if (process.env.NODE_ENV === 'production') {
   const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
   if (fs.existsSync(clientBuildPath)) {
     app.use(express.static(clientBuildPath));
-    console.log('Serving static files from:', clientBuildPath);
   }
 }
 
@@ -45,10 +44,10 @@ app.get('/api/health', (req, res) => {
 const templatePath = path.join(__dirname, '..', 'input', 'Skabelon til DVPI beregner_WSP.xlsx');
 app.get('/api/template', (req, res) => {
   if (!fs.existsSync(templatePath)) {
-    return res.status(404).json({ error: 'Skabelonfil ikke fundet' });
+    return res.status(404).json({ error: 'Skabelonen kunne ikke findes. Kontakt venligst support.' });
   }
   res.download(templatePath, 'Skabelon til DVPI beregner_WSP.xlsx', (err) => {
-    if (err && !res.headersSent) res.status(500).json({ error: err.message });
+    if (err && !res.headersSent) res.status(500).json({ error: 'Skabelonen kunne ikke hentes. Prøv venligst igen.' });
   });
 });
 
@@ -63,20 +62,17 @@ app.get('/api/species', (req, res) => {
     const list = searchSpecies(q, type === 'dansk' ? 'dansk' : type === 'latin' ? 'latin' : undefined);
     res.json(list);
   } catch (error) {
-    console.error('Species search error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Artssøgningen fejlede. Prøv venligst igen.' });
   }
 });
 
 // File upload and processing endpoint
 app.post('/api/process', upload.single('file'), async (req, res) => {
   try {
-    console.log('=== File upload received ===');
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: 'Ingen fil blev modtaget. Prøv venligst igen.' });
     }
 
-    console.log(`File uploaded: ${req.file.originalname}, size: ${req.file.size}, path: ${req.file.path}`);
     const filePath = req.file.path;
     const results = await processCSVFile(filePath);
 
@@ -85,21 +81,13 @@ app.post('/api/process', upload.single('file'), async (req, res) => {
 
     res.json(results);
   } catch (error) {
-    console.error('Error processing file:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Der opstod en fejl under behandling af filen.' });
   }
 });
 
 async function processCSVFile(filePath) {
-  console.log(`processCSVFile: starting to process ${filePath}`);
-  // Parse CSV
   const data = await parseCSV(filePath);
-  console.log(`processCSVFile: parseCSV returned ${data ? data.length : 0} records`);
-  
-  // Process data and build SOAP requests
-  console.log('processCSVFile: calling processData...');
   const processedData = processData(data);
-  console.log(`processCSVFile: processData returned ${processedData.groups.length} groups, ${processedData.totalRows} total rows`);
   
   // Call DVPI service for each group
   const results = [];
@@ -113,10 +101,9 @@ async function processCSVFile(filePath) {
         eqr: response.eqr
       });
     } catch (error) {
-      console.error(`Error processing group ${group.sheet}:`, error);
       results.push({
         sheet: group.sheet,
-        error: error.message
+        error: 'Beregningen kunne ikke gennemføres for denne gruppe.'
       });
     }
   }
@@ -152,7 +139,7 @@ app.post('/api/process-json', express.json(), async (req, res) => {
   try {
     const { records } = req.body || {};
     if (!Array.isArray(records)) {
-      return res.status(400).json({ error: 'Request body must contain a "records" array' });
+      return res.status(400).json({ error: 'Ugyldige data. Prøv venligst igen.' });
     }
     const processedData = processData(records);
     const results = [];
@@ -174,8 +161,7 @@ app.post('/api/process-json', express.json(), async (req, res) => {
       totalRows: processedData.totalRows
     });
   } catch (error) {
-    console.error('Error processing JSON:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message || 'Der opstod en fejl ved beregningen.' });
   }
 });
 
@@ -192,10 +178,4 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode: serving React app');
-  }
-});
+app.listen(PORT);

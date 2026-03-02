@@ -41,9 +41,9 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
       setOptions([]);
       const msg = err.response?.status === 500
         ? (err.response?.data?.error || err.message)
-        : 'Kunne ikke hente arter. Er serveren startet på port 4001?';
+        : 'Kunne ikke hente arter. Prøv igen senere.';
       setFetchError(msg);
-      console.error('Species search failed:', err.message, err.response?.data);
+      void 0; // species search failed
     } finally {
       setLoading(false);
     }

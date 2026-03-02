@@ -161,3 +161,41 @@
 .App-footer-ref-list a:hover {
   text-decoration: underline;
 }
+
+.vejledning {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.vejledning h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.vejledning ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.vejledning li {
+  margin-bottom: 0.4rem;
+}
+
+.vejledning li:last-child {
+  margin-bottom: 0;
+}
+
+.App-footer-sales a {
+  color: #c41e3a;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.App-footer-sales a:hover {
+  text-decoration: underline;
+}

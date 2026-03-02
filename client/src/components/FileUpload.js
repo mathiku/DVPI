@@ -10,7 +10,7 @@ function FileUpload({ onFileProcessed, onError, onLoading }) {
     if (!file) return;
     
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      onError('Upload venligst en CSV-fil');
+      onError('Filen skal være i CSV-format. Hent eventuelt data fra kemidata.dk eller brug skabelonen.');
       return;
     }
 
@@ -26,7 +26,7 @@ function FileUpload({ onFileProcessed, onError, onLoading }) {
       });
       onFileProcessed(response.data);
     } catch (error) {
-      const errorMessage = error.response?.data?.error || error.message || 'Der opstod en fejl';
+      const errorMessage = error.response?.data?.error || 'Der opstod en fejl under behandling af filen. Prøv venligst igen.';
       onError(errorMessage);
     } finally {
       onLoading(false);

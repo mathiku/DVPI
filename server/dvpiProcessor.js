@@ -29,7 +29,6 @@ function loadSpeciesCodes() {
   }
   
   if (!found) {
-    console.warn('stancode-fil ikke fundet. Artskode-mapping vil være begrænset.');
     speciesCodesLoaded = true;
     return;
   }
@@ -72,10 +71,8 @@ function loadSpeciesCodes() {
       }
     }
     
-    console.log(`Loaded ${latinToCode.size} species codes from ${found}`);
     speciesCodesLoaded = true;
   } catch (error) {
-    console.error('Error loading species codes:', error);
     speciesCodesLoaded = true;
   }
 }
@@ -179,7 +176,6 @@ function splitColumns(line) {
     result = line.split(/\s{2,}/).filter(s => s.length > 0);
   }
   
-  console.log(`splitColumns: detected delimiter="${delimiter}", columns=${result.length}`);
   return result;
 }
 
@@ -202,15 +198,11 @@ async function parseCSV(filePath) {
   // Remove BOM if present
   if (content.charCodeAt(0) === 0xFEFF) {
     content = content.slice(1);
-    console.log('parseCSV: removed BOM from file');
   }
   
   // Try to detect delimiter
   const firstLine = content.split('\n')[0];
   let delimiter = ';';
-  
-  console.log(`parseCSV: detected delimiter="${delimiter === '\t' ? 'TAB' : delimiter === ',' ? 'COMMA' : 'SEMICOLON'}", firstLine length=${firstLine.length}`);
-  console.log(`parseCSV: first 200 chars of first line: "${firstLine.substring(0, 200)}"`);
   
   const records = parse(content, {
     columns: true,
@@ -220,25 +212,6 @@ async function parseCSV(filePath) {
     trim: true,
     bom: true  // Handle BOM automatically
   });
-  
-  if (records.length > 0) {
-    const headers = Object.keys(records[0]);
-    console.log(`parseCSV: parsed ${records.length} records, found ${headers.length} columns`);
-    console.log(`parseCSV: all headers=[${headers.join(', ')}]`);
-    
-    // Check for the specific columns we need
-    const hasArtLatin = headers.some(h => h.toLowerCase().includes('art latin'));
-    const hasDaekningsgrad = headers.some(h => h.toLowerCase().includes('dækningsgrad'));
-    console.log(`parseCSV: has "Art latin"=${hasArtLatin}, has "Dækningsgrad"=${hasDaekningsgrad}`);
-    
-    // Show exact matches
-    const artLatinHeader = headers.find(h => h.toLowerCase().includes('art latin'));
-    const daekningsgradHeader = headers.find(h => h.toLowerCase().includes('dækningsgrad'));
-    console.log(`parseCSV: "Art latin" header found as: "${artLatinHeader || 'NOT FOUND'}"`);
-    console.log(`parseCSV: "Dækningsgrad" header found as: "${daekningsgradHeader || 'NOT FOUND'}"`);
-  } else {
-    console.log('parseCSV: no records parsed');
-  }
   
   return records;
 }
@@ -250,9 +223,6 @@ function processData(records) {
   
   // Detect Danish header format
   const headers = Object.keys(records[0] || {});
-  console.log(`processData: checking ${headers.length} headers for Danish format`);
-  console.log(`processData: all headers=[${headers.join(', ')}]`);
-  
   const norm = (h) => h.toLowerCase().replace(/\s/g, '');
   const hasDanishHeader = headers.some(h =>
     h.toLowerCase().includes('art latin') ||
@@ -262,17 +232,13 @@ function processData(records) {
   // Also accept new xlsx template format (Stationsnummer, Navn, Transektnr, Kvadratnr, Art)
   const hasTemplateHeader = !hasDanishHeader && headers.some(h => norm(h) === 'transektnr') && headers.some(h => norm(h) === 'art');
   
-  console.log(`processData: hasDanishHeader=${hasDanishHeader}`);
-  
   if (!hasDanishHeader && !hasTemplateHeader) {
-    throw new Error('CSV does not appear to have Danish vegetation data format');
+    throw new Error('Filen ser ikke ud til at indeholde vandplantedata i det forventede format. Tjek venligst at filen er hentet fra kemidata.dk eller udfyldt efter skabelonen.');
   }
 
   // Find column indices (support both original VANDA names and new xlsx template names)
   const findColumn = (name) => {
-    const idx = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-    console.log(`processData: findColumn("${name}") = ${idx >= 0 ? idx : 'NOT FOUND'}`);
-    return idx;
+    return headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
   };
   const findColumnAny = (...names) => { for (const n of names) { const idx = findColumn(n); if (idx >= 0) return idx; } return -1; };
 
@@ -283,7 +249,7 @@ function processData(records) {
   const idxKv = findColumnAny('Kvadrat nummer', 'Kvadratnr');
   
   if (idxLatin < 0) {
-    throw new Error('Missing required column: Art latin (Videnskabeligt navn)');
+    throw new Error('Kolonnen "Art latin" blev ikke fundet i filen. Tjek venligst filens format.');
   }
   
   // Process rows
@@ -426,12 +392,6 @@ async function callDVPI(requestXml) {
   
   const endpoint = 'http://service.dvpi.au.dk/1.0.0/DCE_DVPI.svc';
   
-  // Log payload sent to API (redact password in logs)
-  const payloadForLog = soapEnvelope.replace(/PW="[^"]*"/, 'PW="***REDACTED***"');
-  console.log('--- DVPI API request payload ---');
-  console.log(payloadForLog);
-  console.log('--- end payload ---');
-  
   try {
     const response = await axios.post(endpoint, soapEnvelope, {
       headers: {
@@ -442,19 +402,8 @@ async function callDVPI(requestXml) {
       timeout: 30000
     });
     
-    // Log full response from API
-    console.log('--- DVPI API full response ---');
-    console.log('Status:', response.status);
-    console.log('Data:', response.data);
-    console.log('--- end response ---');
-    
     return parseDVPIResponse(response.data);
   } catch (error) {
-    console.error('DVPI service error:', error.message);
-    if (error.response) {
-      console.error('Response status:', error.response.status);
-      console.error('Response data:', error.response.data);
-    }
     throw error;
   }
 }
@@ -485,7 +434,6 @@ function parseDVPIResponse(soapResponse) {
       eqr: eqrMatch ? eqrMatch[1] : ''
     };
   } catch (error) {
-    console.error('Error parsing DVPI response:', error);
     return { dvpi: '', dk: '', eqr: '' };
   }
 }
