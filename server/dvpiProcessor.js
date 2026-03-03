@@ -110,7 +110,7 @@ function rawRecordsToGridRecords(records) {
   const findCol = (name) => headers.find(h => h.toLowerCase() === name.toLowerCase());
   const findColAny = (...names) => { for (const n of names) { const c = findCol(n); if (c) return c; } return undefined; };
   const colLatin = findColAny('Art latin', 'Art');
-  const colTran = findColAny('Transektundersøgelse', 'Transektnr');
+  const colTran = findColAny('Transektundersøgelse', 'Transektnr', 'Transektnr.');
   const colKv = findColAny('Kvadrat nummer', 'Kvadratnr');
   const colEmpty = findCol('Arts tom');
   const colDanish = findCol('Art dansk');
@@ -193,8 +193,21 @@ function getSpeciesCode(latinName) {
 }
 
 async function parseCSV(filePath) {
-  let content = fs.readFileSync(filePath, 'utf-8');
-  
+  const raw = fs.readFileSync(filePath);
+
+  // Try UTF-8 first; fall back to Latin-1 (ISO-8859-1) which is common for
+  // Danish CSV exports (e.g. from kemidata.dk / Excel).  The 'ø' in
+  // "Transektundersøgelse" is 0xF8 in Latin-1 and would produce a replacement
+  // character (U+FFFD) if the file is actually Latin-1 but decoded as UTF-8.
+  let content = raw.toString('utf-8');
+  if (content.includes('\uFFFD')) {
+    content = raw.toString('latin1');
+  }
+
+  // Normalize Unicode (NFC) so that e.g. ø represented as o + combining stroke
+  // matches the literal ø in column name lookups.
+  content = content.normalize('NFC');
+
   // Remove BOM if present
   if (content.charCodeAt(0) === 0xFEFF) {
     content = content.slice(1);
@@ -245,7 +258,7 @@ function processData(records) {
   const idxLatin = findColumnAny('Art latin', 'Art');
   const idxCover = findColumn('Dækningsgrad');
   const idxEmpty = findColumn('Arts tom');
-  const idxTran = findColumnAny('Transektundersøgelse', 'Transektnr');
+  const idxTran = findColumnAny('Transektundersøgelse', 'Transektnr', 'Transektnr.');
   const idxKv = findColumnAny('Kvadrat nummer', 'Kvadratnr');
   
   if (idxLatin < 0) {

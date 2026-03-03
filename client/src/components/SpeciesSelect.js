@@ -50,8 +50,8 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
   }, [isLatin]);
 
   useEffect(() => {
-    if (!query || query.length < MIN_SEARCH_LENGTH) {
-      setOptions([]);
+    if (!open || !query || query.length < MIN_SEARCH_LENGTH) {
+      if (!open) setOptions([]);
       return;
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -59,7 +59,7 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query, fetchOptions]);
+  }, [query, fetchOptions, open]);
 
   useEffect(() => {
     setQuery(value || '');
@@ -78,9 +78,7 @@ function SpeciesSelect({ value, type, onSelect, disabled, placeholder }) {
     setQuery(v);
     setFetchError(null);
     setOpen(true);
-    if (v.trim().length >= MIN_SEARCH_LENGTH) {
-      fetchOptions(v);
-    } else {
+    if (v.trim().length < MIN_SEARCH_LENGTH) {
       setOptions([]);
     }
   };
